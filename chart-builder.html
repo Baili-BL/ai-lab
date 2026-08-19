@@ -250,6 +250,66 @@
   body.drawer-mode .workspace{height:100%;min-height:100%}
   body.drawer-mode .bench{height:100%;padding:12px 14px 14px;transition:opacity .28s ease}
   body.is-hydrating .bench{opacity:0}
+  /* 图库卡片预览：标题/图例压缩，绘图区撑满剩余高度，G2 autoFit 适配 */
+  body.preview-mode{background:#fff;overflow:hidden;pointer-events:auto}
+  body.preview-mode .chart-title,
+  body.preview-mode .chart-title h3{
+    pointer-events:none;cursor:default;
+  }
+  body.preview-mode .chart-title h3:hover,
+  body.preview-mode .chart-title h3:focus,
+  body.preview-mode .chart-title h3.is-editing{
+    background:transparent;border-color:transparent;box-shadow:none;
+  }
+  body.preview-mode .g2-tooltip{display:none !important;visibility:hidden !important;opacity:0 !important}
+  body.preview-mode .sidebar,
+  body.preview-mode .topbar,
+  body.preview-mode .stage-bar,
+  body.preview-mode .table-card,
+  body.preview-mode .ai-panel,
+  body.preview-mode .manual-panel,
+  body.preview-mode .toast,
+  body.preview-mode .chart-footnote,
+  body.preview-mode .chart-remark{display:none !important}
+  body.preview-mode .app,
+  body.preview-mode .workspace,
+  body.preview-mode .bench,
+  body.preview-mode .stage{
+    display:flex;flex-direction:column;height:100%;min-height:100%;
+    padding:0;gap:0;margin:0;background:#fff;
+  }
+  body.preview-mode .chart-card{
+    border:none;border-radius:0;box-shadow:none;flex:1;min-height:0;
+    width:100%;height:100%;overflow:hidden;
+  }
+  body.preview-mode .chart-title{
+    padding:4px 8px 0;flex-shrink:0;
+  }
+  body.preview-mode .chart-title h3{
+    font-size:12px;line-height:1.3;padding:0;max-width:100%;
+    white-space:nowrap;overflow:hidden;text-overflow:ellipsis;display:block;
+  }
+  body.preview-mode .legend-slot{flex-shrink:0;max-height:24px;overflow:hidden}
+  body.preview-mode .legend-slot.is-side{display:none}
+  body.preview-mode .chart-legend{
+    padding:0 8px 2px;gap:4px 8px;flex-wrap:nowrap;overflow:hidden;
+    font-size:11px;line-height:18px;justify-content:flex-start;
+  }
+  body.preview-mode .chart-legend .lg-name{max-width:90px}
+  body.preview-mode .chart-main{
+    flex:1 1 auto;min-height:0;min-width:0;position:relative;
+  }
+  body.preview-mode .chart-body{
+    flex:1;min-height:0;min-width:0;padding:2px 4px 2px 2px;position:relative;
+  }
+  body.preview-mode .chart-wrap,
+  body.preview-mode #hc{
+    position:absolute;inset:0;width:100%;height:100%;min-height:0;min-width:0;
+    overflow:visible;
+  }
+  body.preview-mode .hc-fallback{
+    font-size:13px;color:#86909C;letter-spacing:.02em;
+  }
 
   .ct-row{display:flex;align-items:center;gap:10px;padding:12px 14px;border-bottom:1px solid var(--border);flex-shrink:0;position:relative}
   .ct-label{font-size:13px;color:var(--text-2);white-space:nowrap}
@@ -8213,10 +8273,11 @@ function yAxisTitleConfig(o, side){
   /* 默认把单位/标题放在 Y 轴顶部（与业务图惯例一致，如「元/吨」） */
   var atTop = (o.titlePos || "top") === "top" || !title;
   if(atTop){
+    var preview = typeof IS_PREVIEW !== "undefined" && IS_PREVIEW;
     return {
       title: text,
       titlePosition: "top",
-      titleSpacing: 4,
+      titleSpacing: preview ? 2 : 4,
       titleFontSize: o.titleSize || 11,
       titleFill: o.titleColor || "#333333",
       titleFontWeight: o.titleBold ? 700 : 400,
@@ -8224,7 +8285,7 @@ function yAxisTitleConfig(o, side){
       titleFontFamily: chartFontCss(o.titleFont),
       titleTransform: "rotate(0)",
       titleTextAlign: side === "right" ? "end" : "start",
-      titleTextBaseline: "middle"
+      titleTextBaseline: preview ? "bottom" : "middle"
     };
   }
   return {
@@ -8829,11 +8890,27 @@ document.addEventListener("click", function(e){
 var g2Chart = null;
 var zoomRange = null; /* 缩略轴缩放窗口（全局月份索引） */
 
+function seriesDataOf(sr){
+  return (sr && Array.isArray(sr.data)) ? sr.data : [];
+}
+function chartHasNumericData(vis){
+  vis = vis || [];
+  var i, j, data, v;
+  for(i = 0; i < vis.length; i++){
+    data = vis[i] && vis[i].data;
+    if(!data) continue;
+    for(j = 0; j < data.length; j++){
+      v = data[j];
+      if(v != null && v !== "" && isFinite(+v)) return true;
+    }
+  }
+  return false;
+}
 function visibleData(){
   var s = state.time.s, e = state.time.e;
-  return state.series.map(function(sr){
+  return (state.series || []).map(function(sr){
     var mask = condSeriesMask(sr, s, e);
-    var data = sr.data.slice(s, e + 1);
+    var data = seriesDataOf(sr).slice(s, e + 1);
     if(mask){
       data = data.map(function(v, i){ return mask[i] ? v : null; });
     }
@@ -8891,7 +8968,7 @@ function condSeriesMask(sr, s, e){
           t = condOtherAggVal(g.field, r.agg || "avg");
           val = t == null ? null : +t;
         }else{
-          val = sr.data[i];
+          val = seriesDataOf(sr)[i];
         }
         ok = condPassRule(val, r);
       }
@@ -9368,12 +9445,72 @@ function buildFlatRows(vis, labels){
   applyCategoryOrder(vis, labels, rows);
   return sortRowsByTime(rows);
 }
-function xTickCount(labels){
+function measureAxisLabelWidth(text, fontSize){
+  var fs = fontSize || 11;
+  var s = String(text == null ? "" : text);
+  var w = 0;
+  for(var i = 0; i < s.length; i++){
+    w += s.charCodeAt(i) > 255 ? fs : fs * 0.62;
+  }
+  return w;
+}
+function xPlotWidth(){
+  var box = document.getElementById("hc");
+  var w = box ? box.clientWidth : 0;
+  if(w < 40) w = 640;
+  var preview = typeof IS_PREVIEW !== "undefined" && IS_PREVIEW;
+  return Math.max(80, w - (preview ? 54 : 84));
+}
+function xLabelLayout(labels){
+  var x = (state.ax && state.ax.x) || {};
+  var rule = x.labelRule || "smart";
+  var fs = x.labelSize || 11;
   var n = (labels && labels.length) ? labels.length : 1;
-  var rule = (state.ax.x && state.ax.x.labelRule) || "smart";
-  if(rule === "sparse") return Math.max(2, Math.min(4, n));
-  if(rule === "dense") return Math.max(2, Math.min(16, n));
-  return Math.max(2, Math.min(8, n));
+  var plotW = xPlotWidth();
+  var maxW = fs;
+  var step = Math.max(1, Math.floor(n / 12));
+  for(var i = 0; i < n; i += step){
+    maxW = Math.max(maxW, measureAxisLabelWidth(fmtXAxisLabel(i, labels), fs));
+  }
+  maxW = Math.max(maxW, measureAxisLabelWidth(fmtXAxisLabel(n - 1, labels), fs));
+  var fit0 = Math.max(2, Math.floor(plotW / (maxW + 10)));
+  var fit45 = Math.max(2, Math.floor(plotW / (maxW * 0.72 + 8)));
+  var fit90 = Math.max(2, Math.floor(plotW / (fs + 8)));
+  var tickCount, angle;
+  if(state.type === "hbar"){
+    tickCount = rule === "sparse" ? Math.min(4, n) : rule === "dense" ? Math.min(n, 16) : Math.min(8, n);
+    angle = 0;
+  } else if(rule === "sparse"){
+    tickCount = Math.min(4, n, fit0);
+    angle = tickCount > fit0 ? 45 : 0;
+  } else if(rule === "dense"){
+    if(n <= fit0){ tickCount = n; angle = 0; }
+    else if(n <= fit45){ tickCount = n; angle = 45; }
+    else { tickCount = Math.min(n, Math.max(fit90, 8)); angle = 90; }
+  } else {
+    if(Math.min(8, n) <= fit0){ tickCount = Math.min(8, n); angle = 0; }
+    else if(Math.min(8, n) <= fit45){ tickCount = Math.min(8, n); angle = 45; }
+    else { tickCount = Math.min(8, n, fit90); angle = 90; }
+  }
+  tickCount = Math.max(2, Math.min(n, tickCount));
+  var reserve = angle === 90 ? Math.max(44, Math.ceil(maxW + 8)) : angle === 45 ? Math.max(40, Math.ceil(maxW * 0.72 + 12)) : Math.max(22, fs + 12);
+  return { tickCount: tickCount, angle: angle, reserve: reserve, maxW: maxW, rule: rule };
+}
+function xLabelOverlapTransform(layout){
+  if(state.type === "hbar"){
+    return [
+      { type: "ellipsis", suffix: "..", minLength: 4, maxLength: 8 },
+      { type: "hide", keepHeader: true, keepTail: true }
+    ];
+  }
+  var angles = layout.angle === 90 ? [45, 90] : [0, 45, 90];
+  return [
+    { type: "rotate", optionalAngles: angles, recoverWhenFailed: true },
+    { type: "hide", keepHeader: true, keepTail: true }
+  ];
+}
+function xTickCount(labels){
+  return xLabelLayout(labels).tickCount;
 }
 function xTickFilter(v){
   return Math.abs(Number(v) - Math.round(Number(v))) < 1e-6;
@@ -9663,11 +9800,21 @@ function makeXAxisCfg(labels){
   if(!state.axisShow || !x.show){
     return { title: false, label: false, tick: false, line: false, grid: false, lineOpacity: 0 };
   }
-  var cfg = { tickCount: xTickCount(labels), tickFilter: xTickFilter };
+  var layout = xLabelLayout(labels);
+  var cfg = { tickCount: layout.tickCount, tickFilter: xTickFilter };
   applyAxisVisual(cfg, x);
   if(x.showLabels){
     cfg.labelFormatter = function(v){ return fmtXAxisLabel(v, labels); };
-    cfg.labelAutoHide = x.labelRule === "smart";
+    cfg.size = layout.reserve;
+    cfg.transform = xLabelOverlapTransform(layout);
+    cfg.labelAutoRotate = {
+      optionalAngles: [0, 45, 90],
+      recoverWhenFailed: true
+    };
+    cfg.labelAutoHide = {
+      keepHeader: true,
+      keepTail: true
+    };
   }
   var title = axisTitleText(x);
   if(title){
@@ -9917,17 +10064,33 @@ function renderG2Tooltip(ev, info){
         + '<span class="cb-tip-label" title="' + htmlEsc(name) + '">' + htmlEsc(name) + "</span></span>"
         + '<span class="cb-tip-val">' + htmlEsc(value) + "</span></div>";
     }).join("");
-    return '<div class="cb-tip">'
+    var html = '<div class="cb-tip">'
       + (title ? '<div class="cb-tip-title">' + htmlEsc(title) + "</div>" : "")
       + rows
       + "</div>";
+    return html;
   }catch(err){
     return '<div class="cb-tip">' + htmlEsc(err && err.message ? err.message : err) + "</div>";
   }
 }
+var previewTipOn = false;
+var previewPtr = { x: 0, y: 0 };
+function postPreviewTooltip(show, html){
+  if(typeof IS_PREVIEW === "undefined" || !IS_PREVIEW) return;
+  if(!window.parent || window.parent === window) return;
+  try{
+    window.parent.postMessage({
+      type: "chart-builder-preview-tooltip",
+      show: !!show,
+      html: html || "",
+      x: previewPtr.x,
+      y: previewPtr.y
+    }, "*");
+  }catch(e){}
+}
 function applyChartTooltip(chart){
   if(!chart) return;
-  if(state.tooltipShow === false){
+  if(state.tooltipShow === false || (typeof IS_PREVIEW !== "undefined" && IS_PREVIEW)){
     chart.interaction("tooltip", false);
     return;
   }
@@ -9937,6 +10100,12 @@ function applyChartTooltip(chart){
     groupName: false,
     marker: !hideHoverDot
   });
+  if(typeof IS_PREVIEW !== "undefined" && IS_PREVIEW){
+    chart.on("tooltip:hide", function(){
+      previewTipOn = false;
+      postPreviewTooltip(false);
+    });
+  }
 }
 function asOverlay(mark){
   /* 只关 overlay 的 tooltip；不能 axis(x,false)，G2 会把共享 X 轴整根关掉 */
@@ -10025,14 +10194,22 @@ function paintG2Chart(){
 
   var yUnitTop = !!(resolveAxisUnit(state.ax.yL, "left") || (hasRight && resolveAxisUnit(state.ax.yR, "right")));
   var xHasTitle = !!(state.axisShow && state.ax.x && state.ax.x.show && axisTitleText(state.ax.x));
+  var preview = typeof IS_PREVIEW !== "undefined" && IS_PREVIEW;
+  var xLayout = xLabelLayout(labels);
+  var xBottom = Math.max(preview ? 24 : 40, xLayout.reserve + (xHasTitle ? 18 : 6));
+  var box = document.getElementById("hc");
+  var pw = box ? Math.floor(box.clientWidth) : 0;
+  var ph = box ? Math.floor(box.clientHeight) : 0;
   g2Chart = new G2.Chart({
     container: "hc",
     autoFit: true,
+    width: pw > 16 ? pw : undefined,
+    height: ph > 16 ? ph : undefined,
     margin: 0,
-    paddingTop: yUnitTop ? 36 : 16,
-    paddingRight: hasRight ? 56 : 28,
-    paddingBottom: xHasTitle ? 64 : 40,
-    paddingLeft: 56,
+    paddingTop: preview ? (yUnitTop ? 32 : 10) : (yUnitTop ? 36 : 16),
+    paddingRight: preview ? (hasRight ? 40 : 10) : (hasRight ? 56 : 28),
+    paddingBottom: xBottom,
+    paddingLeft: preview ? 44 : 56,
     theme: "light",
     animation: false
   });
@@ -10371,13 +10548,18 @@ function renderChart(){
     box.innerHTML = '<div class="hc-fallback">G2 图表库加载失败<br>请检查 g2.min.js 后刷新页面</div>';
     renderTable(vis, labels); return;
   }
-  if(!state.series.length){
+  if(!state.series.length || !chartHasNumericData(vis)){
     if(g2Chart){ try{ g2Chart.destroy(); }catch(e){} g2Chart = null; }
-    box.innerHTML = '<div class="hc-fallback">请打开手工配置，在「字段」中点击「选择指标」添加</div>';
+    box.innerHTML = '<div class="hc-fallback">'
+      + (!state.series.length && !(typeof IS_PREVIEW !== "undefined" && IS_PREVIEW)
+        ? "请打开手工配置，在「字段」中点击「选择指标」添加"
+        : "没有数据")
+      + "</div>";
     renderExternalLegend();
     renderTable(vis, labels); return;
   }
   if(g2Chart){ try{ g2Chart.destroy(); }catch(e){} g2Chart = null; }
+  _g2Size = { w: 0, h: 0 };
   box.innerHTML = "";
   try{
     paintG2Chart();
@@ -10388,6 +10570,7 @@ function renderChart(){
   renderTable(vis, labels);
 }
 
+var _g2Size = { w: 0, h: 0 };
 function g2Resize(){
   if(!g2Chart || !state.series.length) return;
   var box = document.getElementById("hc");
@@ -10395,6 +10578,9 @@ function g2Resize(){
   var w = Math.floor(box.clientWidth);
   var h = Math.floor(box.clientHeight);
   if(w < 16 || h < 16) return;
+  if(w === _g2Size.w && h === _g2Size.h) return;
+  _g2Size.w = w;
+  _g2Size.h = h;
   try{
     if(typeof g2Chart.changeSize === "function"){
       g2Chart.changeSize(w, h);
@@ -10661,8 +10847,42 @@ document.getElementById("tEnd").addEventListener("change", function(e){
 /* ================= 抽屉模式 / 保存 / 返回 ================= */
 var IS_DRAWER = /(?:\?|&)drawer=1(?:&|$)/.test(location.search);
 var IS_EDIT = /(?:\?|&)edit=1(?:&|$)/.test(location.search);
+var IS_PREVIEW = /(?:\?|&)preview=1(?:&|$)/.test(location.search);
 if(IS_DRAWER) document.body.classList.add("drawer-mode");
-if(IS_EDIT) document.body.classList.add("is-hydrating");
+if(IS_PREVIEW) document.body.classList.add("preview-mode", "drawer-mode");
+if(IS_EDIT || IS_PREVIEW) document.body.classList.add("is-hydrating");
+if(IS_PREVIEW){
+  document.addEventListener("mousemove", function(e){
+    previewPtr.x = e.clientX;
+    previewPtr.y = e.clientY;
+    if(!previewTipOn || !window.parent || window.parent === window) return;
+    try{
+      window.parent.postMessage({
+        type: "chart-builder-preview-tooltip-move",
+        x: e.clientX,
+        y: e.clientY
+      }, "*");
+    }catch(err){}
+  }, true);
+  document.addEventListener("mouseleave", function(){
+    previewTipOn = false;
+    postPreviewTooltip(false);
+  });
+  document.addEventListener("click", function(){
+    try{ window.parent.postMessage({ type: "chart-builder-preview-click" }, "*"); }catch(e){}
+  });
+  var hcEl = document.getElementById("hc");
+  if(hcEl && typeof ResizeObserver === "function"){
+    var roTimer = null;
+    var ro = new ResizeObserver(function(){
+      clearTimeout(roTimer);
+      roTimer = setTimeout(function(){
+        if(typeof g2Reflow === "function") g2Reflow();
+      }, 40);
+    });
+    ro.observe(hcEl);
+  }
+}
 var gallerySaveOpen = false;
 var editingChartId = "";
 var GALLERY_DIR_TREE = [
@@ -10723,7 +10943,7 @@ function persistChartToGalleryStore(payload){
     exist.title = title;
     exist.dir = dir;
     exist.kind = payload.chartType || exist.kind || "";
-    exist.thumb = payload.thumb || exist.thumb || "";
+    delete exist.thumb;
     exist.snapshot = payload.snapshot || exist.snapshot || null;
     exist.builderState = payload.builderState || exist.builderState || null;
     exist.mine = true;
@@ -10741,82 +10961,49 @@ function persistChartToGalleryStore(payload){
       date: date,
       inMine: true,
       seed: hashStr(title + id),
-      thumb: payload.thumb || "",
       snapshot: payload.snapshot || null,
       builderState: payload.builderState || null
     });
   }
-  try{ localStorage.setItem(key, JSON.stringify(list)); }
-  catch(e){
+  try{
+    list.forEach(function(c){ if(c) delete c.thumb; });
+    localStorage.setItem(key, JSON.stringify(list));
+  }catch(e){
     try{
-      list.forEach(function(c){ c.thumb = c.thumb && c.thumb.length > 200000 ? "" : c.thumb; });
+      list.forEach(function(c){
+        if(!c) return;
+        delete c.thumb;
+        if(c.builderState && c.builderState.series){
+          c.builderState = {
+            type: c.builderState.type,
+            series: (c.builderState.series || []).map(function(s){
+              return { name: s.alias || s.name, color: s.color, data: s.data };
+            }),
+            time: c.builderState.time || null
+          };
+        }
+      });
       localStorage.setItem(key, JSON.stringify(list));
     }catch(e2){}
   }
 }
-function captureChartThumb(){
-  var host = document.getElementById("hc");
-  if(!host) return "";
-  var canvases = host.querySelectorAll("canvas");
-  if(!canvases.length) return "";
-  var src = canvases[0];
-  var sw = src.width || 0;
-  var sh = src.height || 0;
-  if(!sw || !sh){
-    sw = Math.max(1, src.clientWidth || host.clientWidth || 640);
-    sh = Math.max(1, src.clientHeight || host.clientHeight || 320);
-  }
-  var tmp = document.createElement("canvas");
-  tmp.width = sw;
-  tmp.height = sh;
-  var tctx = tmp.getContext("2d");
-  if(!tctx) return "";
-  tctx.fillStyle = "#ffffff";
-  tctx.fillRect(0, 0, sw, sh);
-  for(var i = 0; i < canvases.length; i++){
-    try{ tctx.drawImage(canvases[i], 0, 0, sw, sh); }catch(err){}
-  }
-  var legendH = 28;
-  var tw = 560;
-  var plotH = Math.max(120, Math.round(tw * sh / sw));
-  var thumb = document.createElement("canvas");
-  thumb.width = tw;
-  thumb.height = plotH + legendH;
-  var ctx = thumb.getContext("2d");
-  if(!ctx) return "";
-  ctx.fillStyle = "#ffffff";
-  ctx.fillRect(0, 0, thumb.width, thumb.height);
-  ctx.font = "12px -apple-system,BlinkMacSystemFont,'PingFang SC','Microsoft YaHei',sans-serif";
-  ctx.textBaseline = "middle";
-  var x = 14, y = legendH / 2;
-  (state.series || []).slice(0, 6).forEach(function(s){
-    var name = s.alias || s.name || "";
-    ctx.fillStyle = s.color || "#2f6bff";
-    ctx.beginPath();
-    ctx.arc(x + 4, y, 4, 0, Math.PI * 2);
-    ctx.fill();
-    ctx.fillStyle = "#646a73";
-    ctx.fillText(name, x + 12, y);
-    x += 20 + ctx.measureText(name).width + 12;
-  });
-  ctx.drawImage(tmp, 0, legendH, tw, plotH);
-  try{
-    return thumb.toDataURL("image/jpeg", 0.76);
-  }catch(err){
-    return "";
-  }
-}
+/* 图库改为前端用 snapshot 实时渲染，不再截 JPEG 缩略图入库 */
+function captureChartThumb(){ return ""; }
 function chartSaveSnapshot(){
   var s = (state.time && state.time.s) || 0;
   var e = (state.time && state.time.e) != null ? state.time.e : 90;
+  var nKeep = 42;
   return {
     type: state.type || "line",
+    unit: (typeof unitOfSeries === "function" && state.series[0])
+      ? unitOfSeries(state.series[0])
+      : ((state.ax && state.ax.yL && state.ax.yL.unit) || ""),
     series: (state.series || []).map(function(sr){
       var data = ((sr.data || []).slice(s, e + 1));
-      if(data.length > 24){
-        var step = (data.length - 1) / 23;
+      if(data.length > nKeep){
+        var step = (data.length - 1) / (nKeep - 1);
         var slim = [];
-        for(var i = 0; i < 24; i++) slim.push(data[Math.round(i * step)]);
+        for(var i = 0; i < nKeep; i++) slim.push(data[Math.round(i * step)]);
         data = slim;
       }
       return { name: sr.alias || sr.name, color: sr.color, data: data };
@@ -10849,8 +11036,13 @@ function applyStateCopy(saved){
 }
 function notifyBuilderPainted(type){
   function done(){
+    _g2Size = { w: 0, h: 0 };
     if(typeof g2Reflow === "function") g2Reflow();
     document.body.classList.remove("is-hydrating");
+    if(typeof g2Reflow === "function"){
+      requestAnimationFrame(function(){ g2Reflow(); });
+      setTimeout(function(){ g2Reflow(); }, 80);
+    }
     if(window.parent && window.parent !== window){
       try{ window.parent.postMessage({ type: type }, "*"); }catch(e){}
     }
@@ -10862,13 +11054,21 @@ function notifyBuilderPainted(type){
   }
 }
 function hydrateBuilderState(saved, meta){
-  var copy;
-  try{ copy = JSON.parse(JSON.stringify(saved)); }catch(e){ return; }
-  if(!applyStateCopy(copy)) return;
+  var copy = null;
+  try{ copy = JSON.parse(JSON.stringify(saved)); }catch(e){ copy = null; }
+  if(!copy || !applyStateCopy(copy)){
+    if(typeof renderChart === "function") renderChart();
+    notifyBuilderPainted("chart-builder-restored");
+    return;
+  }
   editingChartId = (meta && meta.id) || editingChartId || "";
   if(meta && meta.title){
     state.title = meta.title;
     state.titleManual = true;
+  }
+  if(IS_PREVIEW){
+    state.tableShow = false;
+    state.tooltipShow = false;
   }
   var crumb = document.querySelector(".crumb .cur");
   if(crumb) crumb.textContent = "编辑图表";
@@ -10901,7 +11101,6 @@ function chartSavePayload(){
     type: "chart-builder-save-request",
     title: (state.title || "").trim() || "未命名图表",
     chartType: state.type || "line",
-    thumb: captureChartThumb(),
     snapshot: chartSaveSnapshot(),
     editId: editingChartId || "",
     builderState: cloneBuilderState()
@@ -10933,6 +11132,9 @@ window.addEventListener("message", function(e){
   }
   if(data.type === "chart-builder-reset"){
     resetBuilderToNew();
+  }
+  if(data.type === "chart-builder-preview-reflow"){
+    if(typeof g2Reflow === "function") g2Reflow();
   }
 });
 
@@ -10967,7 +11169,6 @@ document.getElementById("saveLocalOk").addEventListener("click", function(){
     title: name,
     dir: dir,
     chartType: state.type || "line",
-    thumb: typeof captureChartThumb === "function" ? captureChartThumb() : "",
     snapshot: typeof chartSaveSnapshot === "function" ? chartSaveSnapshot() : null,
     builderState: typeof cloneBuilderState === "function" ? cloneBuilderState() : null,
     editId: editingChartId || ""
@@ -12187,9 +12388,9 @@ initSrFieldSelect();
 initSrDashPicker();
 initSrMarkerPicker();
 sliderUI();
-if(!IS_EDIT) refreshAll();
-if(IS_DRAWER && window.parent && window.parent !== window){
-  try{ window.parent.postMessage({ type: "chart-builder-ready" }, "*"); }catch(e){}
+if(!IS_EDIT && !IS_PREVIEW) refreshAll();
+if((IS_DRAWER || IS_PREVIEW) && window.parent && window.parent !== window){
+  try{ window.parent.postMessage({ type: IS_PREVIEW ? "chart-builder-preview-ready" : "chart-builder-ready" }, "*"); }catch(e){}
 }
 
 /* 数据源菜单子项展开/收起（点击箭头，不触发跳转） */

@@ -293,18 +293,38 @@
   .list-table .lt-name{max-width:240px;overflow:hidden;text-overflow:ellipsis}
   .list-table .lt-id{color:var(--text-3);font-family:"SF Mono",Menlo,monospace;font-size:11px}
   .list-table .lt-num{text-align:right;font-family:"SF Mono",Menlo,monospace}
-  .lt-del,.lt-view,.lt-toggle{border:none;background:none;font-size:12px;cursor:pointer;padding:2px 5px;border-radius:4px}
-  .lt-del{color:var(--danger)}
+  .lt-del{border:none;background:none;font-size:12px;cursor:pointer;padding:2px 5px;border-radius:4px;color:var(--danger)}
   .lt-del:hover{background:#fdf0f1;text-decoration:underline}
-  .lt-view{color:var(--primary)}
-  .lt-view:hover{background:var(--primary-bg);text-decoration:underline}
-  .lt-toggle{color:var(--text-2)}
-  .lt-toggle:hover{background:#f0f1f4;text-decoration:underline}
-  .lt-ops{white-space:nowrap;display:flex;gap:4px}
-  .ind-foot .ind-view{
-    border:none;background:none;color:var(--primary);font-size:12px;cursor:pointer;padding:0;
+  .lt-ops{white-space:nowrap;display:flex;align-items:center;gap:2px}
+  .ic-ico{
+    position:relative;width:28px;height:28px;padding:0;border:none;background:none;border-radius:6px;
+    display:inline-flex;align-items:center;justify-content:center;
+    color:var(--text-3);cursor:pointer;flex-shrink:0;
   }
-  .ind-foot .ind-view:hover{text-decoration:underline}
+  .ic-ico svg{width:16px;height:16px;display:block;fill:currentColor}
+  .lt-toggle svg,.dv-state-ico svg{
+    width:18px;height:18px;
+    fill:currentColor;stroke:currentColor;stroke-width:1.35px;stroke-linejoin:round;
+    overflow:visible;
+  }
+  .ic-ico:hover{background:#f0f1f4}
+  .ic-ico[data-tip]::after{
+    content:attr(data-tip);
+    position:absolute;left:50%;bottom:calc(100% + 6px);
+    transform:translateX(-50%);
+    padding:4px 8px;border-radius:4px;
+    background:rgba(0,0,0,.8);color:#fff;
+    font-size:12px;line-height:1.4;white-space:nowrap;font-weight:400;
+    opacity:0;visibility:hidden;pointer-events:none;z-index:20;
+  }
+  .ic-ico[data-tip]:hover::after{opacity:1;visibility:visible}
+  .lt-view,.ind-view{color:var(--primary)}
+  .lt-view:hover,.ind-view:hover{background:var(--primary-bg);color:var(--primary-hover)}
+  .lt-toggle.is-off,.dv-state-ico.is-off{color:var(--success)}
+  .lt-toggle.is-off:hover,.dv-state-ico.is-off:hover{background:#e8f8ef;color:#0f9d58}
+  .lt-toggle.is-on,.dv-state-ico.is-on{color:#e8862e}
+  .lt-toggle.is-on:hover,.dv-state-ico.is-on:hover{background:#fff4e8;color:#d97706}
+  .ind-foot .ind-ops{display:inline-flex;align-items:center;gap:2px}
 
   /* 卡片区右上搜索 */
   .gi-search{margin-left:auto;display:flex;align-items:center;gap:6px;border:1px solid var(--border-input);border-radius:6px;padding:0 10px;height:32px;width:210px;background:#fff}
@@ -570,9 +590,10 @@
   .type-cell{display:inline-flex;align-items:center;gap:6px}
   .list-table .tag{display:inline-flex;align-items:center;padding:0 7px;height:20px;border-radius:4px;font-size:11px;line-height:1;background:var(--primary-bg);color:var(--primary)}
   .type-cell .raw{color:var(--text-3);font-size:12px}
-  .ind-chart{height:86px;position:relative}
+  .ind-chart{height:86px;position:relative;overflow:hidden}
   .ind-chart .unit{position:absolute;top:0;left:0;font-size:10px;color:var(--text-3)}
-  .ind-chart svg{width:100%;height:100%;display:block}
+  .ind-chart svg,.ind-chart canvas{width:100%;height:100%;display:block}
+  .ind-chart .g2-tooltip{display:none !important}
   .ind-dates{display:flex;justify-content:space-between;font-size:10px;color:var(--text-3);margin-top:2px}
   .ind-foot{display:flex;justify-content:space-between;align-items:center;font-size:12px;color:var(--text-3);margin-top:8px}
   .state-off{color:var(--danger)}
@@ -1435,7 +1456,7 @@
         <span class="dv-tab" data-t="数据详情">数据详情</span>
       </div>
       <div class="dv-actions">
-        <button class="dv-act warn" id="dvState">停用</button>
+        <button type="button" class="ic-ico dv-state-ico is-on" id="dvState" title="停用" aria-label="停用"></button>
         <button class="dv-act" id="dvRefresh">刷新</button>
         <button class="dv-act muted" id="dvEdit">编辑</button>
         <button class="dv-act" id="dvAddLatest">添加最新值</button>
@@ -3024,24 +3045,76 @@ document.getElementById("genDesc").addEventListener("click", function(){
    指标中心页面逻辑
 ================================================================ */
 
-/* ---------- 迷你走势图（种子随机游走） ---------- */
-function sparkSVG(seed, w, h){
-  w = w || 300; h = h || 86;
+/* ---------- 卡片迷你走势图（G2 折线，与详情页同款线型） ---------- */
+var IC_LINE_COLOR = "#0016ED";
+var cardG2 = {};
+function sparkPoints(seed, n){
+  n = n || 96;
   var s = seed * 9301 + 49297;
   function rnd(){ s = (s * 9301 + 49297) % 233280; return s / 233280; }
-  var n = 60, pts = [], v = 40 + rnd() * 20;
-  var trend = (rnd() - 0.5) * 1.6;
+  var pts = [], v = 48 + rnd() * 16;
   for(var i = 0; i < n; i++){
-    v += (rnd() - 0.5) * 9 + trend;
-    v = Math.max(6, Math.min(h - 6, v));
-    pts.push([ (i / (n - 1)) * w, v ]);
+    v += rnd() > 0.8 ? (rnd() - 0.5) * 44 : (rnd() - 0.5) * 11;
+    v = Math.max(8, Math.min(92, v));
+    pts.push({ i: i, v: v });
   }
-  var line = pts.map(function(p, i){ return (i ? "L" : "M") + p[0].toFixed(1) + " " + p[1].toFixed(1); }).join(" ");
-  var area = line + " L" + w + " " + h + " L0 " + h + " Z";
+  return pts;
+}
+function sparkSVG(seed, w, h){
+  w = w || 300; h = h || 86;
+  var pts = sparkPoints(seed);
+  var line = pts.map(function(p, i){
+    var x = (i / (pts.length - 1)) * w;
+    var y = h - (p.v / 100) * (h - 10) - 5;
+    return (i ? "L" : "M") + x.toFixed(1) + " " + y.toFixed(1);
+  }).join(" ");
   return '<svg viewBox="0 0 ' + w + ' ' + h + '" preserveAspectRatio="none">'
-    + '<path d="' + area + '" fill="rgba(47,107,255,.08)"/>'
-    + '<path d="' + line + '" fill="none" stroke="#2f6bff" stroke-width="1.6" stroke-linejoin="round"/>'
+    + '<path d="' + line + '" fill="none" stroke="' + IC_LINE_COLOR + '" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>'
     + '</svg>';
+}
+function destroyCardG2(){
+  Object.keys(cardG2).forEach(function(id){
+    try{ cardG2[id].destroy(); }catch(e){}
+  });
+  cardG2 = {};
+}
+function paintCardSparks(){
+  destroyCardG2();
+  var els = document.querySelectorAll(".ind-chart[data-spark]");
+  if(!els.length) return;
+  if(typeof G2 === "undefined"){
+    els.forEach(function(el){ el.innerHTML = sparkSVG(+el.getAttribute("data-spark")); });
+    return;
+  }
+  els.forEach(function(el, idx){
+    var seed = +el.getAttribute("data-spark");
+    var chart = new G2.Chart({
+      container: el,
+      autoFit: true,
+      height: 86,
+      margin: 0,
+      padding: 0,
+      inset: 4,
+      theme: "light",
+      animation: false
+    });
+    chart
+      .line()
+      .data(sparkPoints(seed))
+      .encode("x", "i")
+      .encode("y", "v")
+      .style("stroke", IC_LINE_COLOR)
+      .style("lineWidth", 3)
+      .style("lineCap", "round")
+      .style("lineJoin", "round")
+      .axis(false)
+      .legend(false)
+      .tooltip(false);
+    chart.legend(false);
+    chart.interaction("tooltip", false);
+    chart.render();
+    cardG2["spark-" + idx] = chart;
+  });
 }
 
 var CARDS = [
@@ -3096,14 +3169,39 @@ function kindTag(c){
     ? '<span class="k-tag k-calc">计算</span>'
     : '<span class="k-tag k-base">基础</span>';
 }
+function icIco(name, size){
+  return (typeof icon === "function") ? icon(name, size || 16) : "";
+}
+function icEscAttr(s){
+  return String(s).replace(/&/g, "&amp;").replace(/"/g, "&quot;").replace(/</g, "&lt;");
+}
+function icViewBtn(title, extraCls){
+  return '<button type="button" class="ic-ico lt-view' + (extraCls ? " " + extraCls : "") + '" data-t="' + icEscAttr(title) + '" data-tip="查看预览" title="查看预览" aria-label="查看预览">' + icIco("preview", 16) + "</button>";
+}
+function icToggleBtn(c, extraCls){
+  var off = c.state === "停用";
+  var tip = off ? "启用" : "停用";
+  return '<button type="button" class="ic-ico lt-toggle ' + (off ? "is-off" : "is-on") + (extraCls ? " " + extraCls : "") + '" data-t="' + icEscAttr(c.title) + '" data-tip="' + tip + '" title="' + tip + '" aria-label="' + tip + '">' + icIco(off ? "unlock" : "lock", 18) + "</button>";
+}
+function syncDvStateBtn(card){
+  var btn = document.getElementById("dvState");
+  if(!btn) return;
+  var off = !card || card.state === "停用";
+  var tip = off ? "启用" : "停用";
+  btn.classList.toggle("is-off", off);
+  btn.classList.toggle("is-on", !off);
+  btn.title = tip;
+  btn.setAttribute("aria-label", tip);
+  btn.setAttribute("data-tip", tip);
+  btn.innerHTML = icIco(off ? "unlock" : "lock", 18);
+}
 function cardHTML(c){
-  var stateCls = c.state === "停用" ? "state-off" : "state-on";
-  return '<div class="ind-card" data-t="' + c.title.replace(/"/g, "&quot;") + '">'
-    + '<div class="ind-title">' + kindTag(c) + '<span class="ind-name" title="' + c.title + '">' + c.title + '</span></div>'
-    + '<div class="ind-chart">' + sparkSVG(c.seed) + '</div>'
+  return '<div class="ind-card" data-t="' + icEscAttr(c.title) + '">'
+    + '<div class="ind-title">' + kindTag(c) + '<span class="ind-name" title="' + c.title.replace(/"/g, "&quot;") + '">' + c.title + '</span></div>'
+    + '<div class="ind-chart" data-spark="' + c.seed + '"></div>'
     + '<div class="ind-dates"><span>22/01</span><span>24/01</span><span>26/01</span></div>'
     + '<div class="ind-foot"><span>创建时间：' + c.date + '</span>'
-    + '<span><button class="ind-view" data-t="' + c.title.replace(/"/g, "&quot;") + '">查看详情</button> <span class="' + stateCls + '">' + c.state + '</span></span>'
+    + '<span class="ind-ops">' + icViewBtn(c.title, "ind-view") + icToggleBtn(c) + "</span>"
     + '</div></div>';
 }
 
@@ -3200,9 +3298,9 @@ function listHTML(arr){
       + '<td>' + c.date + '</td>'
       + '<td><span class="' + cls + '">' + c.state + '</span></td>'
       + '<td><div class="lt-ops">'
-      + '<button class="lt-view" data-t="' + c.title + '">查看详情</button>'
-      + '<button class="lt-toggle" data-t="' + c.title + '">' + (c.state === "停用" ? "启用" : "停用") + '</button>'
-      + '<button class="lt-del" data-t="' + c.title + '">删除</button>'
+      + icViewBtn(c.title)
+      + icToggleBtn(c)
+      + '<button class="lt-del" data-t="' + c.title.replace(/"/g, "&quot;") + '">删除</button>'
       + '</div></td></tr>';
   }).join("");
   return '<table class="list-table"><thead><tr>'
@@ -3290,10 +3388,13 @@ function renderCards(opts){
       '共 <b>' + arr.length + '</b> 个指标（<span class="k-tag k-base">基础</span>' + nBase + ' · <span class="k-tag k-calc">计算</span>' + (arr.length - nBase) + '）';
     if(viewMode === "list"){
       box.classList.add("as-list");
+      destroyCardG2();
       box.innerHTML = page.length ? listHTML(page) : empty;
     }else{
       box.classList.remove("as-list");
+      destroyCardG2();
       box.innerHTML = page.length ? page.map(cardHTML).join("") : empty;
+      if(page.length) requestAnimationFrame(paintCardSparks);
     }
     renderPager(arr.length);
     showCardsLoading(false);
@@ -3484,6 +3585,7 @@ document.getElementById("dvList").addEventListener("click", function(e){
 document.getElementById("dvBack").addEventListener("click", closeDetail);
 
 /* G2 序列数据：返回 [{name, color, points:[[date,val],...]}] */
+var DV_LINE_COLOR = IC_LINE_COLOR;
 function dvMonthsFiltered(){
   var months = DV_MONTHS.slice();
   if(TIME_RANGE.mode === "recent" && TIME_RANGE.years > 0){
@@ -3504,7 +3606,7 @@ function dvSeriesData(title, data){
   var months = dvMonthsFiltered();
   var idxMap = {};
   DV_MONTHS.forEach(function(d, i){ idxMap[d] = i; });
-  var arr = [{ name: title, color: "#1c4cf2", points: months.map(function(d){
+  var arr = [{ name: title, color: DV_LINE_COLOR, points: months.map(function(d){
     var i = idxMap[d]; return [d, i != null ? data[i] : null];
   }) }];
   if(dvYoyOn){
@@ -3711,7 +3813,7 @@ function paintLineChart(title){
   var mainFlat = flat.filter(function(d){ return d.name !== "去年同期"; });
   var yoyFlat = flat.filter(function(d){ return d.name === "去年同期"; });
   var colorDomain = yoyFlat.length ? [title, "去年同期"] : [title];
-  var colorRange = yoyFlat.length ? ["#1c4cf2", "#9aa0ad"] : ["#1c4cf2"];
+  var colorRange = yoyFlat.length ? [DV_LINE_COLOR, "#9aa0ad"] : [DV_LINE_COLOR];
   var tipCfg = {
     title: function(d){ return String(d.date).replace(/-/g, "/"); },
     items: [{
@@ -3727,9 +3829,10 @@ function paintLineChart(title){
     .encode("y", "value")
     .encode("color", "name")
     .encode("series", "name")
-    .style("lineWidth", 2.5)
-    .style("shape", "smooth")
-    .style("stroke", "#1c4cf2")
+    .style("lineWidth", 3)
+    .style("lineCap", "round")
+    .style("lineJoin", "round")
+    .style("stroke", DV_LINE_COLOR)
     .scale("color", { domain: colorDomain, range: colorRange })
     .axis("x", {
       labelFormatter: function(v){ return String(v).slice(2).replace("-", "/"); },
@@ -3822,7 +3925,7 @@ function renderDvMain(){
   var title = dvCurrent;
   document.getElementById("dvSource").textContent = "数据来源：" + icSource(title);
   var card = CARDS.find(function(c){ return c.title === title; });
-  document.getElementById("dvState").textContent = card && card.state === "停用" ? "启用" : "停用";
+  syncDvStateBtn(card);
   setSeasonUI();
 
   if(typeof G2 === "undefined"){
@@ -3879,7 +3982,7 @@ document.getElementById("dvState").addEventListener("click", function(){
   var card = CARDS.find(function(c){ return c.title === dvCurrent; });
   if(!card) return;
   card.state = card.state === "停用" ? "启用" : "停用";
-  this.textContent = card.state === "停用" ? "启用" : "停用";
+  syncDvStateBtn(card);
   toast("已" + (card.state === "停用" ? "停用" : "启用") + "指标：" + dvCurrent);
 });
 document.getElementById("dvCopy").addEventListener("click", function(){
@@ -4243,7 +4346,7 @@ document.getElementById("lgTree").addEventListener("click", function(e){
 });
 /* 卡片 / 列表行点击 → 打开详情 */
 document.getElementById("cards").addEventListener("click", function(e){
-  if(e.target.closest(".lt-view, .lt-toggle, .lt-del")) return;
+  if(e.target.closest(".lt-view, .lt-toggle, .lt-del, .ic-ico")) return;
   var vb = e.target.closest(".ind-view");
   if(vb){ openDetail(vb.dataset.t); return; }
   var card = e.target.closest(".ind-card");
