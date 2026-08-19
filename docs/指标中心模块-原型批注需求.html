@@ -1,0 +1,609 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>指标中心模块 · 原型交互批注需求 · AILab</title>
+<style>
+
+
+  :root{
+    --primary:#2f6bff; --primary-bg:#eaf1ff; --primary-soft:#f3f7ff;
+    --text:#1f2329; --text-2:#646a73; --text-3:#8f959e;
+    --border:#e3e6eb; --bg:#f0f2f5; --card:#fff;
+    --ok:#12b76a; --warn:#b25f09; --danger:#e34d59;
+    --radius:10px; --shadow:0 1px 2px rgba(15,23,42,.04),0 8px 24px rgba(15,23,42,.06);
+    --side:248px;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  html{scroll-behavior:smooth}
+  body{
+    font-family:-apple-system,BlinkMacSystemFont,"PingFang SC","Hiragino Sans GB","Microsoft YaHei",sans-serif;
+    color:var(--text); background:var(--bg); line-height:1.55; font-size:14px;
+  }
+  a{color:var(--primary); text-decoration:none}
+  a:hover{text-decoration:underline}
+  code,kbd{
+    font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
+    font-size:12px; background:#f2f4f7; border:1px solid var(--border);
+    border-radius:4px; padding:1px 6px; color:#344054;
+  }
+
+  .layout{display:flex; min-height:100vh}
+  .nav{
+    width:var(--side); flex-shrink:0; position:sticky; top:0; height:100vh;
+    background:#fff; border-right:1px solid var(--border); overflow-y:auto;
+    padding:18px 14px 28px;
+  }
+  .nav .brand{display:flex; gap:10px; align-items:center; padding:4px 8px 16px; border-bottom:1px solid var(--border); margin-bottom:14px}
+  .nav .brand-mark{width:28px;height:28px;border-radius:7px;display:block;object-fit:contain;flex-shrink:0}
+  .nav .eta{
+    width:34px; height:26px; border-radius:5px; background:var(--primary); color:#fff;
+    display:flex; align-items:center; justify-content:center; font-weight:800; font-size:11px;
+  }
+  .nav .brand b{display:block; font-size:13px}
+  .nav .brand span{font-size:11px; color:var(--text-3)}
+  .nav .group{font-size:11px; color:var(--text-3); padding:10px 10px 6px; letter-spacing:.04em}
+  .nav a.item{
+    display:block; padding:8px 10px; border-radius:8px; color:var(--text-2);
+    font-size:13px; text-decoration:none; margin-bottom:2px;
+  }
+  .nav a.item:hover,.nav a.item.on{background:var(--primary-bg); color:var(--primary); font-weight:500}
+  .nav .proto-links{margin-top:16px; padding-top:14px; border-top:1px solid var(--border)}
+  .nav .proto-links a{display:block; font-size:12.5px; padding:6px 10px; color:var(--text-2)}
+
+  .main{flex:1; min-width:0; padding:28px 36px 80px}
+  .hero{
+    background:linear-gradient(135deg,#f7f9ff 0%,#fff 48%,#eef5ff 100%);
+    border:1px solid var(--border); border-radius:14px; padding:28px 30px 24px;
+    box-shadow:var(--shadow); margin-bottom:22px;
+  }
+  .hero .eyebrow{font-size:12px; color:var(--primary); font-weight:600; letter-spacing:.04em; margin-bottom:8px}
+  .hero h1{font-size:26px; letter-spacing:-.02em; margin-bottom:8px}
+  .hero p{color:var(--text-2); max-width:720px; font-size:14px}
+  .meta{
+    display:flex; flex-wrap:wrap; gap:8px; margin-top:16px;
+  }
+  .tag{
+    display:inline-flex; align-items:center; gap:6px;
+    padding:5px 10px; border-radius:999px; background:#fff;
+    border:1px solid var(--border); font-size:12px; color:var(--text-2);
+  }
+  .tag b{color:var(--text); font-weight:600}
+
+  .section{margin-bottom:28px; scroll-margin-top:20px}
+  .section > h2{
+    font-size:18px; margin-bottom:12px; display:flex; align-items:center; gap:10px;
+  }
+  .section > h2 .n{
+    width:28px; height:28px; border-radius:8px; background:var(--primary);
+    color:#fff; font-size:13px; display:inline-flex; align-items:center; justify-content:center;
+  }
+  .section > h3{font-size:15px; margin:18px 0 10px; color:var(--text)}
+  .lead{color:var(--text-2); margin-bottom:12px; font-size:13.5px}
+
+  .card{
+    background:var(--card); border:1px solid var(--border); border-radius:var(--radius);
+    box-shadow:var(--shadow); overflow:hidden; margin-bottom:14px;
+  }
+  .card .shot{
+    background:#e8ebf0; border-bottom:1px solid var(--border);
+    padding:14px 14px 10px; cursor:zoom-in;
+  }
+  .card .shot img{
+    display:block; width:100%; max-height:460px; object-fit:contain; object-position:top;
+    background:#fff; border:1px solid var(--border); border-radius:8px;
+  }
+  .card .shot .cap{
+    display:flex; justify-content:space-between; align-items:center;
+    margin-top:8px; font-size:12px; color:var(--text-3);
+  }
+  .card .body{padding:14px 16px 16px}
+  .card .body h4{font-size:14px; margin-bottom:10px}
+
+  table.ann{width:100%; border-collapse:collapse; font-size:13px}
+  table.ann th{
+    text-align:left; background:#f7f8fa; color:var(--text-2); font-weight:500;
+    padding:9px 10px; border-bottom:1px solid var(--border); white-space:nowrap;
+  }
+  table.ann td{padding:10px; border-bottom:1px solid #f0f1f4; vertical-align:top}
+  table.ann tr:last-child td{border-bottom:none}
+  table.ann td:first-child{width:48px; white-space:nowrap}
+  table.ann td:nth-child(2){width:140px; color:var(--text); font-weight:500}
+  table.ann.ann-req td:nth-child(2){width:120px}
+  table.ann.ann-req td:nth-child(3){width:34%; color:var(--text); font-weight:400}
+  table.ann.ann-req td:nth-child(4){color:var(--text-2)}
+  table.ann.ann-req th:nth-child(3){color:var(--primary)}
+  pre.tree{
+    background:#fff;border:1px solid var(--border);border-radius:10px;
+    padding:14px 16px;font-size:12.5px;line-height:1.7;overflow:auto;margin-bottom:14px;
+  }
+  .no{display:inline-flex; min-width:22px; height:22px; padding:0 6px; border-radius:6px;
+    background:var(--primary-bg); color:var(--primary); font-size:12px; font-weight:700;
+    align-items:center; justify-content:center}
+
+  .grid-2{display:grid; grid-template-columns:1fr 1fr; gap:14px}
+  @media (max-width:1100px){
+    .nav{display:none}
+    .main{padding:20px 16px 60px}
+    .grid-2{grid-template-columns:1fr}
+  }
+
+  .info{
+    background:var(--primary-soft); border:1px solid #d6e4ff; border-radius:10px;
+    padding:12px 14px; color:#304b8a; font-size:13px; margin:10px 0 14px;
+  }
+  .info b{color:var(--text)}
+
+  .src-table{width:100%; border-collapse:collapse; font-size:13px; background:#fff;
+    border:1px solid var(--border); border-radius:10px; overflow:hidden}
+  .src-table th,.src-table td{padding:10px 12px; border-bottom:1px solid var(--border); text-align:left}
+  .src-table th{background:#f7f8fa; color:var(--text-2); font-weight:500}
+  .src-table tr:last-child td{border-bottom:none}
+
+  .flow{
+    display:grid; gap:10px; margin-top:8px;
+  }
+  .flow .f{
+    background:#fff; border:1px solid var(--border); border-radius:10px; padding:12px 14px;
+  }
+  .flow .f b{display:block; margin-bottom:4px; font-size:13.5px}
+  .flow .f span{color:var(--text-2); font-size:13px}
+
+  .check{list-style:none; display:grid; gap:8px}
+  .check li{
+    background:#fff; border:1px solid var(--border); border-radius:8px;
+    padding:10px 12px; display:flex; gap:10px; align-items:flex-start;
+  }
+  .check li::before{
+    content:""; width:16px; height:16px; margin-top:2px; flex-shrink:0;
+    border:1.5px solid #c9cdd4; border-radius:4px; background:#fff;
+  }
+
+  .lightbox{
+    position:fixed; inset:0; background:rgba(15,23,42,.72); display:none;
+    align-items:center; justify-content:center; z-index:1000; padding:24px; cursor:zoom-out;
+  }
+  .lightbox.show{display:flex}
+  .lightbox img{
+    max-width:min(1400px,96vw); max-height:92vh; border-radius:10px;
+    box-shadow:0 20px 60px rgba(0,0,0,.35); background:#fff;
+  }
+
+  .foot{margin-top:28px; color:var(--text-3); font-size:12.5px; text-align:center}
+
+
+
+</style>
+</head>
+<body>
+<div class="layout">
+  <aside class="nav">
+    <div class="brand">
+      <img class="brand-mark" src="../assets/ailab-mark.png" alt="AILab" width="28" height="28" style="border-radius:7px">
+      <div>
+        <b>AILab</b>
+        <span>AI指标工坊 · 指标中心批注</span>
+      </div>
+    </div>
+    <div class="group">目录</div>
+    <a class="item" href="#s0">0. 范围与入口</a>
+    <a class="item" href="#s1">1. 总览布局</a>
+    <a class="item" href="#s2">2. 目录面板</a>
+    <a class="item" href="#s3">3. 指标列表区</a>
+    <a class="item" href="#s4">4. 添加指标</a>
+    <a class="item" href="#s5">5. 计算指标</a>
+    <a class="item" href="#s6">6. 替换指标</a>
+    <a class="item" href="#s7">7. 代码运算</a>
+    <a class="item" href="#s8">8. 批量移动</a>
+    <a class="item" href="#s9">9. 指标详情</a>
+    <a class="item" href="#s10">10. 指标溯源</a>
+    <a class="item" href="#s11">11. 端到端路径</a>
+    <a class="item" href="#s12">12. 业务规则</a>
+    <a class="item" href="#s13">13. 验收清单</a>
+    <a class="item" href="#s14">14. 截图索引</a>
+    <div class="proto-links">
+      <div class="group">打开原型</div>
+      <a href="../indicator-center.html" target="_blank">指标中心</a>
+      <a href="../chart-gallery.html" target="_blank">图库（下游）</a>
+      <a href="../data-source.html?src=上海钢联" target="_blank">数据源（上游）</a>
+      <a href="./数据源模块-原型批注需求.html">数据源批注文档</a>
+    </div>
+  </aside>
+
+  <main class="main">
+    <header class="hero">
+      <div class="eyebrow">PRODUCT REQUIREMENT · PROTOTYPE ANNOTATION</div>
+      <h1>指标中心模块 · 原型交互批注需求</h1>
+      <p>按「截图 / 区域」组织。每个区域同时给出 <b>需求说明</b>（业务目标与规则）与 <b>交互说明</b>（点哪里、发生什么）。覆盖目录治理、基础/计算指标、代码运算、详情分析与溯源。</p>
+      <div class="meta">
+        <span class="tag"><b>产品</b> AILab AI指标工坊</span>
+        <span class="tag"><b>版本</b> V1.0</span>
+        <span class="tag"><b>日期</b> 2026-08-11</span>
+        <span class="tag"><b>原型</b> indicator-center.html</span>
+        <span class="tag"><b>结构</b> 需求说明 + 交互说明</span>
+      </div>
+    </header>
+
+    <div class="info"><b>阅读方式：</b>需求说明写「要什么 / 规则 / 约束」；交互说明写「怎么点 / 反馈」。原型变更须同步更新本文档与截图。</div>
+    <div class="info" style="margin-top:0"><b>模块定位：</b>指标资产主库——聚合数据源基础指标，支持计算/代码派生、替换引用、目录治理与时序详情；计算指标可查看溯源关联图。下游供图库选指标绘图。</div>
+
+
+<section class="section" id="s0">
+  <h2><span class="n">0</span>范围与入口</h2>
+  <pre class="tree">侧边栏 · 指标中心  →  indicator-center.html</pre>
+  <div class="info"><b>本期范围：</b> 目录治理、指标浏览（卡片/列表）、添加基础指标、计算指标（多算子）、替换指标、代码运算、批量移动、详情走势/季节性/时间段、编辑信息、添加最新值、计算指标溯源。</div>
+  <div class="info"><b>规划中 / 占位（原型未落地逻辑）：</b> 「只看我的」、工具栏「数据调整」、收藏星标、溯源「关联指标」完整列表页、目录跨层级移动（上级目录控件禁用）。</div>
+</section>
+
+<section class="section" id="s1">
+  <h2><span class="n">1</span>总览布局</h2>
+  <div class="card"><div class="shot" data-zoom><img src="prd-screenshots/indicator-center/01-overview.png" alt="指标中心总览"><div class="cap"><span>指标中心总览</span><span>点击图片可放大</span></div></div><div class="body">
+    <h4>区域需求与交互说明</h4>
+<table class="ann ann-req"><thead><tr><th>编号</th><th>区域</th><th>需求说明</th><th>交互说明</th></tr></thead><tbody>
+<tr><td><span class="no">①</span></td><td>侧栏「指标中心」</td><td>平台级指标资产入口，与数据源配置页分离</td><td>菜单高亮；面包屑「指标中心」</td></tr>
+<tr><td><span class="no">②</span></td><td>顶栏</td><td>全局导航与账号区，不承载业务筛选</td><td>汉堡、English、通知、用户</td></tr>
+<tr><td><span class="no">③</span></td><td>条件 chips（可选）</td><td>预留多条件筛选摘要，可移除单条件</td><td>点击 chip 关闭可移除该项（演示）</td></tr>
+<tr><td><span class="no">④</span></td><td>左：目录面板</td><td>按业务分类组织指标；支撑增删改与批量移动</td><td>见 §2</td></tr>
+<tr><td><span class="no">⑤</span></td><td>右：指标区</td><td>浏览、筛选、创建与进入详情的主工作区</td><td>见 §3</td></tr>
+<tr><td><span class="no">⑥</span></td><td>工具栏主操作</td><td>覆盖「引入 / 计算 / 替换 / 代码」核心作业</td><td>添加指标、计算指标、替换指标、代码运算；数据调整为规划占位</td></tr>
+</tbody></table>
+</div></div>
+</section>
+
+<section class="section" id="s2">
+  <h2><span class="n">2</span>目录面板</h2>
+  <div class="card"><div class="shot" data-zoom><img src="prd-screenshots/indicator-center/02-dir-filtered.png" alt="目录筛选后"><div class="cap"><span>目录筛选后</span><span>点击图片可放大</span></div></div><div class="body">
+    <h4>区域需求与交互说明</h4>
+<table class="ann ann-req"><thead><tr><th>编号</th><th>区域</th><th>需求说明</th><th>交互说明</th></tr></thead><tbody>
+<tr><td><span class="no">①</span></td><td>标题「目录」</td><td>明确左栏职责为分类导航</td><td>固定标题</td></tr>
+<tr><td><span class="no">②</span></td><td>「只看我的」</td><td><b>规划中</b>：个人相关指标过滤（原型仅 UI）</td><td>勾选暂无过滤逻辑</td></tr>
+<tr><td><span class="no">③</span></td><td>搜索 + 精准匹配</td><td>在深树中按指标 ID/名称定位；精准模式用于核验全名/ID</td><td>与右侧 <code>#gridSearch</code> 双向同步；开精准=完全相等，关=模糊包含；切换 Toast</td></tr>
+<tr><td><span class="no">④</span></td><td>目录树</td><td>多级业务分类；角标反映本级及子路径指标数；操作对齐数据源/图库习惯</td><td>点击选中过滤右侧；再点取消=全部；箭头展开/收起；hover 显示＋/编辑/删除</td></tr>
+<tr><td><span class="no">⑤</span></td><td>行内「＋」</td><td>就地添加子目录，路径 <code>父/子</code></td><td>打开添加目录弹窗，上级预填当前路径</td></tr>
+<tr><td><span class="no">⑥</span></td><td>行内编辑 / 删除</td><td>改名需同步指标 <code>dir</code>；删除需确认（含子目录）</td><td>编辑弹窗；删除确认后移除节点并清理筛选</td></tr>
+<tr><td><span class="no">⑦</span></td><td>添加一级/子目录</td><td>未选中建根；选中建子级，降低误建层级</td><td>底部按钮文案随选中态切换</td></tr>
+<tr><td><span class="no">⑧</span></td><td>批量移动指标</td><td>目录重组时批量改挂，避免逐条操作</td><td>打开 §7 弹窗</td></tr>
+<tr><td><span class="no">⑨</span></td><td>折叠目录</td><td>扩大右侧可视区</td><td>边缘箭头收起/展开面板</td></tr>
+</tbody></table>
+</div></div>
+  <h3>2.1 添加目录</h3>
+  <div class="card"><div class="shot" data-zoom><img src="prd-screenshots/indicator-center/16-dir-add.png" alt="添加目录"><div class="cap"><span>添加目录</span><span>点击图片可放大</span></div></div><div class="body">
+    <h4>区域需求与交互说明</h4>
+<table class="ann ann-req"><thead><tr><th>编号</th><th>区域</th><th>需求说明</th><th>交互说明</th></tr></thead><tbody>
+<tr><td><span class="no">①</span></td><td>上级目录</td><td>明确挂载点，防止建错层级</td><td>只读展示上级路径或「—」（一级）</td></tr>
+<tr><td><span class="no">②</span></td><td>目录名称</td><td>必填；同级唯一；禁止路径分隔符</td><td>输入框；含 <code>/ \</code> Toast 拦截；同名拦截</td></tr>
+<tr><td><span class="no">③</span></td><td>保存 / 取消</td><td>保存后可选中新目录并刷新树计数</td><td>保存落库演示；取消不落库</td></tr>
+</tbody></table>
+</div></div>
+  <div class="info"><b>编辑目录补充需求：</b> 原型限制「只能移动到同一层级」（上级下拉禁用）；改名后同步 <code>gridDir</code> 与指标路径前缀。</div>
+  <div class="info"><b>删除目录补充需求：</b> 删除含子目录；若当前筛选落在被删树上则清空筛选。</div>
+</section>
+
+<section class="section" id="s3">
+  <h2><span class="n">3</span>指标列表区（卡片 / 列表）</h2>
+  <h3>3.1 卡片视图与筛选</h3>
+  <div class="card"><div class="shot" data-zoom><img src="prd-screenshots/indicator-center/04-date-filter.png" alt="创建时间筛选"><div class="cap"><span>创建时间筛选</span><span>点击图片可放大</span></div></div><div class="body">
+    <h4>区域需求与交互说明</h4>
+<table class="ann ann-req"><thead><tr><th>编号</th><th>区域</th><th>需求说明</th><th>交互说明</th></tr></thead><tbody>
+<tr><td><span class="no">①</span></td><td>数量统计</td><td>展示当前筛选下总量，并拆分基础/计算，便于资产结构感知</td><td><code>共 N 个指标（基础 x · 计算 y）</code></td></tr>
+<tr><td><span class="no">②</span></td><td>名称搜索</td><td>在结果集内二次过滤名称/ID</td><td>受精准匹配开关影响</td></tr>
+<tr><td><span class="no">③</span></td><td>创建时间筛选</td><td>按指标<b>创建时间</b>缩小范围（非数据最新日期）</td><td>起止日期；快捷近 7/30/90 天；起≤止；重置清空</td></tr>
+<tr><td><span class="no">④</span></td><td>视图切换</td><td>卡片偏浏览走势；列表偏运维字段与行内操作</td><td>卡片 / 列表互斥，切换保留筛选与页码策略（重置见实现）</td></tr>
+<tr><td><span class="no">⑤</span></td><td>卡片内容</td><td>快速识别类型、名称、走势形态与状态</td><td>类型标签、名称、迷你图、创建时间、「查看详情」、状态文案</td></tr>
+<tr><td><span class="no">⑥</span></td><td>进入详情</td><td>详情为分析主场景，需一键可达</td><td>点击卡片或「查看详情」进入全屏详情 §8</td></tr>
+<tr><td><span class="no">⑦</span></td><td>分页</td><td>默认每页 12 条，避免一次渲染过大</td><td>底部分页条：上一页/页码/下一页 + 区间信息</td></tr>
+</tbody></table>
+</div></div>
+  <h3>3.2 列表视图</h3>
+  <div class="card"><div class="shot" data-zoom><img src="prd-screenshots/indicator-center/03-list-view.png" alt="列表视图"><div class="cap"><span>列表视图</span><span>点击图片可放大</span></div></div><div class="body">
+    <h4>区域需求与交互说明</h4>
+<table class="ann ann-req"><thead><tr><th>编号</th><th>区域</th><th>需求说明</th><th>交互说明</th></tr></thead><tbody>
+<tr><td><span class="no">①</span></td><td>表格列</td><td>运维视角需覆盖标识、口径、类型、最新点、来源、目录、状态</td><td>名称、指标ID、单位、频率、类型（基础/计算+算子或「原始指标」）、最新值、最新日期、数据来源、所属目录、创建时间、状态、操作</td></tr>
+<tr><td><span class="no">②</span></td><td>查看详情</td><td>与卡片一致进入全屏详情</td><td>行内链接</td></tr>
+<tr><td><span class="no">③</span></td><td>启用 / 停用</td><td>控制指标是否可被下游选用（演示态切换）</td><td>切换状态并 Toast</td></tr>
+<tr><td><span class="no">④</span></td><td>删除</td><td>高危操作需确认，防误删资产</td><td>confirm 后从列表移除并 Toast</td></tr>
+</tbody></table>
+</div></div>
+  <div class="info"><b>空态需求：</b> 无匹配时提示调整关键词或日期范围，不展示伪数据。</div>
+</section>
+
+<section class="section" id="s4">
+  <h2><span class="n">4</span>添加指标（基础指标）</h2>
+  <div class="card"><div class="shot" data-zoom><img src="prd-screenshots/indicator-center/05-add-indicator.png" alt="添加指标"><div class="cap"><span>添加指标</span><span>点击图片可放大</span></div></div><div class="body">
+    <h4>区域需求与交互说明</h4>
+<table class="ann ann-req"><thead><tr><th>编号</th><th>区域</th><th>需求说明</th><th>交互说明</th></tr></thead><tbody>
+<tr><td><span class="no">①</span></td><td>入口「添加指标」</td><td>从外部库/源按 ID 引入<b>基础指标</b>到中心</td><td>打开添加弹窗</td></tr>
+<tr><td><span class="no">②</span></td><td>数据来源 / 数据库</td><td>限定检索范围，对齐多源接入</td><td>下来选择来源与库</td></tr>
+<tr><td><span class="no">③</span></td><td>按 ID 搜索</td><td>已知 ID 快速检索候选</td><td>输入过滤候选表</td></tr>
+<tr><td><span class="no">④</span></td><td>候选表多选</td><td>支持一次引入多条；展示单位/频率/起止便于核对</td><td>勾选、全选；底部「已选 N」；0 选中时确认禁用</td></tr>
+<tr><td><span class="no">⑤</span></td><td>已存在处理</td><td><b>禁止重复引入</b>：已在库中的指标进入确认只读态，引导先删原指标</td><td>警告条 + 只读行；主按钮变为「知道了」</td></tr>
+<tr><td><span class="no">⑥</span></td><td>确认添加</td><td>写入中心，<code>kind=base</code>，默认启用</td><td>成功 Toast 并刷新列表</td></tr>
+<tr><td><span class="no">⑦</span></td><td>取消</td><td>不落库</td><td>关闭弹窗</td></tr>
+</tbody></table>
+</div></div>
+</section>
+
+<section class="section" id="s5">
+  <h2><span class="n">5</span>计算指标</h2>
+  <div class="card"><div class="shot" data-zoom><img src="prd-screenshots/indicator-center/06-calc-indicator.png" alt="计算指标"><div class="cap"><span>计算指标</span><span>点击图片可放大</span></div></div><div class="body">
+    <h4>区域需求与交互说明</h4>
+<table class="ann ann-req"><thead><tr><th>编号</th><th>区域</th><th>需求说明</th><th>交互说明</th></tr></thead><tbody>
+<tr><td><span class="no">①</span></td><td>入口「计算指标」</td><td>用可视化算子从已有指标派生新序列，沉淀可复用计算资产</td><td>打开全屏/遮罩计算配置层</td></tr>
+<tr><td><span class="no">②</span></td><td>计算方式导航</td><td>约 6 组、19 种算子（运算、变换、统计等），可搜索</td><td>左侧分类列表 + 搜索；切换方式不清空已填基本信息</td></tr>
+<tr><td><span class="no">③</span></td><td>基本信息</td><td>名称、单位、目录、频率为资产落库必要字段</td><td>名称/目录必填（保存校验）；目录用级联选择器</td></tr>
+<tr><td><span class="no">④</span></td><td>建议命名 / 公式说明</td><td>降低命名不一致与文档缺失</td><td>一键采用建议名；可生成说明文案</td></tr>
+<tr><td><span class="no">⑤</span></td><td>参数绑定</td><td>表达式变量须<b>精准匹配</b>到具体指标；控制复杂度</td><td>参数 ≤10；分段 ≤5；扩散子指标 ≤20；至少保留 1 行</td></tr>
+<tr><td><span class="no">⑥</span></td><td>时间与空值策略</td><td>多序列对齐与缺失处理影响结果可信度</td><td>时间并集/指定区间；空值策略含「前后 35 天最近值」等</td></tr>
+<tr><td><span class="no">⑦</span></td><td>公式预览</td><td>保存前可核对表达式语义</td><td>预览区实时/刷新展示</td></tr>
+<tr><td><span class="no">⑧</span></td><td>保存</td><td>生成 <code>kind=calc</code> 指标，记录算子标签与目录</td><td>校验通过后写入列表并 Toast</td></tr>
+</tbody></table>
+</div></div>
+  <div class="info"><b>验收要点：</b> 超上限 Toast 拦截；未填名称/目录不可保存；保存后类型标签为「计算」。</div>
+</section>
+
+<section class="section" id="s6">
+  <h2><span class="n">6</span>替换指标</h2>
+  <div class="card"><div class="shot" data-zoom><img src="prd-screenshots/indicator-center/07-replace.png" alt="替换指标"><div class="cap"><span>替换指标</span><span>点击图片可放大</span></div></div><div class="body">
+    <h4>区域需求与交互说明</h4>
+<table class="ann ann-req"><thead><tr><th>编号</th><th>区域</th><th>需求说明</th><th>交互说明</th></tr></thead><tbody>
+<tr><td><span class="no">①</span></td><td>入口「替换指标」</td><td>当底层序列变更时，批量替换图、表、计算、逻辑图中的引用，降低级联改造成本</td><td>打开替换弹窗</td></tr>
+<tr><td><span class="no">②</span></td><td>原指标</td><td>被替换对象，需可搜索定位</td><td>带精准匹配的选择器</td></tr>
+<tr><td><span class="no">③</span></td><td>替换为</td><td>新引用目标；不得与原指标相同</td><td>同上；两端必选且不同</td></tr>
+<tr><td><span class="no">④</span></td><td>全部替换</td><td>一次性替换所有引用（演示）</td><td>确认后 Toast 说明影响范围</td></tr>
+<tr><td><span class="no">⑤</span></td><td>取消</td><td>不执行替换</td><td>关闭</td></tr>
+</tbody></table>
+</div></div>
+</section>
+
+<section class="section" id="s7">
+  <h2><span class="n">7</span>代码运算</h2>
+  <div class="card"><div class="shot" data-zoom><img src="prd-screenshots/indicator-center/08-code.png" alt="代码运算"><div class="cap"><span>代码运算</span><span>点击图片可放大</span></div></div><div class="body">
+    <h4>区域需求与交互说明</h4>
+<table class="ann ann-req"><thead><tr><th>编号</th><th>区域</th><th>需求说明</th><th>交互说明</th></tr></thead><tbody>
+<tr><td><span class="no">①</span></td><td>入口「代码运算」</td><td>面向复杂/自定义逻辑，用脚本定义指标，补齐可视化算子覆盖不足</td><td>打开三栏代码工作台</td></tr>
+<tr><td><span class="no">②</span></td><td>左：AI 辅助</td><td>降低公式编写门槛；可套用模板到编辑器</td><td>对话区、快捷 chips、「应用到公式编辑器」</td></tr>
+<tr><td><span class="no">③</span></td><td>中：配置与代码</td><td>编码系统生成且只读，保证唯一；名称必填；支持归因/静态代码双 Tab</td><td>编码自动生成；名称*；分类/类型/定义/频率；<code>@</code> 插入变量；缺失值/小数位/年化等高级项</td></tr>
+<tr><td><span class="no">④</span></td><td>数据源表</td><td>声明脚本依赖的输入序列</td><td>表格维护引用</td></tr>
+<tr><td><span class="no">⑤</span></td><td>右：试算</td><td>保存前验证脚本可运行且返回时序数组</td><td>「试算」跑 JS；图+最近 100 期表；语法/运行错误 Toast</td></tr>
+<tr><td><span class="no">⑥</span></td><td>存草稿 / 保存</td><td>草稿演示；保存加入指标列表（原型未强制试算通过）</td><td>名称必填后可保存</td></tr>
+</tbody></table>
+</div></div>
+</section>
+
+<section class="section" id="s8">
+  <h2><span class="n">8</span>批量移动指标</h2>
+  <div class="card"><div class="shot" data-zoom><img src="prd-screenshots/indicator-center/09-batch-move.png" alt="批量移动"><div class="cap"><span>批量移动</span><span>点击图片可放大</span></div></div><div class="body">
+    <h4>区域需求与交互说明</h4>
+<table class="ann ann-req"><thead><tr><th>编号</th><th>区域</th><th>需求说明</th><th>交互说明</th></tr></thead><tbody>
+<tr><td><span class="no">①</span></td><td>入口</td><td>支持目录重组与纠错挂载</td><td>目录底「批量移动指标」</td></tr>
+<tr><td><span class="no">②</span></td><td>来源与可选集</td><td>默认当前筛选结果，避免误移全局</td><td>展示来源目录或「全部」；列表为 <code>filteredCards</code></td></tr>
+<tr><td><span class="no">③</span></td><td>勾选 / 全选</td><td>可部分移动</td><td>行勾选；全选切换；计数「已选 a / b」</td></tr>
+<tr><td><span class="no">④</span></td><td>移动到</td><td>目标目录级联，支持深路径</td><td>级联选择器；未选不可确认</td></tr>
+<tr><td><span class="no">⑤</span></td><td>确认移动</td><td>批量更新 <code>dir</code>，刷新树角标与列表</td><td>当前目录无指标时入口 Toast 拦截</td></tr>
+<tr><td><span class="no">⑥</span></td><td>取消</td><td>不落库</td><td>关闭</td></tr>
+</tbody></table>
+</div></div>
+</section>
+
+<section class="section" id="s9">
+  <h2><span class="n">9</span>指标详情（全屏）</h2>
+  <div class="info">详情为<b>全屏视图</b>（非右侧抽屉），左侧可切换同批指标，右侧为走势与数据。</div>
+  <h3>9.1 走势主界面</h3>
+  <div class="card"><div class="shot" data-zoom><img src="prd-screenshots/indicator-center/10-detail.png" alt="指标详情"><div class="cap"><span>指标详情</span><span>点击图片可放大</span></div></div><div class="body">
+    <h4>区域需求与交互说明</h4>
+<table class="ann ann-req"><thead><tr><th>编号</th><th>区域</th><th>需求说明</th><th>交互说明</th></tr></thead><tbody>
+<tr><td><span class="no">①</span></td><td>返回</td><td>回到列表/卡片工作区</td><td>「返回」关闭详情</td></tr>
+<tr><td><span class="no">②</span></td><td>左侧指标列表</td><td>在详情内快速切换对比对象</td><td>点击切换当前指标并重载图</td></tr>
+<tr><td><span class="no">③</span></td><td>Tab：走势图 / 数据详情</td><td>图形分析与字段/明细分离</td><td>分段切换</td></tr>
+<tr><td><span class="no">④</span></td><td>启停 / 刷新 / 编辑 / 添加最新值</td><td>运维与补数入口集中在详情头</td><td>启停 Toast；编辑→§9.4；添加最新值→§9.5</td></tr>
+<tr><td><span class="no">⑤</span></td><td>指标溯源（仅计算）</td><td>原始指标无公式依赖，不展示溯源；计算指标可追溯参数链</td><td>仅计算指标显示；下拉：关联图 / 关联指标（后者演示 Toast）</td></tr>
+<tr><td><span class="no">⑥</span></td><td>更多菜单</td><td>收敛低频操作</td><td>编辑信息；计算专属：重新计算、查看公式、关联图/指标；通用：复制数据、添加最新值</td></tr>
+<tr><td><span class="no">⑦</span></td><td>主图</td><td>默认平滑曲线；可叠加同比</td><td>G2 渲染；「去年同期」虚线（季节性模式下隐藏）</td></tr>
+<tr><td><span class="no">⑧</span></td><td>时间段</td><td>控制可视窗口；默认近 5 年</td><td>打开时间段弹窗 §9.3</td></tr>
+<tr><td><span class="no">⑨</span></td><td>脚注</td><td>标明来源与添加人，满足溯源合规</td><td>数据来源、添加人</td></tr>
+</tbody></table>
+</div></div>
+  <h3>9.2 季节性图</h3>
+  <div class="card"><div class="shot" data-zoom><img src="prd-screenshots/indicator-center/11-detail-season.png" alt="季节性图"><div class="cap"><span>季节性图</span><span>点击图片可放大</span></div></div><div class="body">
+    <h4>区域需求与交互说明</h4>
+<table class="ann ann-req"><thead><tr><th>编号</th><th>区域</th><th>需求说明</th><th>交互说明</th></tr></thead><tbody>
+<tr><td><span class="no">①</span></td><td>曲线 / 季节性切换</td><td>季节性用于跨年形态对比，与普通曲线互斥场景</td><td>Toggle 切换；季节性时隐藏「去年同期」</td></tr>
+<tr><td><span class="no">②</span></td><td>公历 / 春节对齐</td><td>农产品等品种需按春节日历观察</td><td>春节对齐按春节点前后窗口重切序列</td></tr>
+<tr><td><span class="no">③</span></td><td>多年叠加</td><td>按年切分为多条曲线叠加</td><td>图例按年份区分</td></tr>
+</tbody></table>
+</div></div>
+  <h3>9.3 时间段设置</h3>
+  <div class="card"><div class="shot" data-zoom><img src="prd-screenshots/indicator-center/12-time-range.png" alt="时间段"><div class="cap"><span>时间段</span><span>点击图片可放大</span></div></div><div class="body">
+    <h4>区域需求与交互说明</h4>
+<table class="ann ann-req"><thead><tr><th>编号</th><th>区域</th><th>需求说明</th><th>交互说明</th></tr></thead><tbody>
+<tr><td><span class="no">①</span></td><td>最近 N 年</td><td>快捷窗口，N∈[1,50]，按最新日倒推</td><td>数字输入 + 确认</td></tr>
+<tr><td><span class="no">②</span></td><td>自定义区间</td><td>精确起止</td><td>起止日期；起≤止校验</td></tr>
+<tr><td><span class="no">③</span></td><td>确定 / 取消</td><td>确定后重绘主图</td><td>关闭弹窗</td></tr>
+</tbody></table>
+</div></div>
+  <h3>9.4 编辑信息</h3>
+  <div class="card"><div class="shot" data-zoom><img src="prd-screenshots/indicator-center/14-edit-info.png" alt="编辑信息"><div class="cap"><span>编辑信息</span><span>点击图片可放大</span></div></div><div class="body">
+    <h4>区域需求与交互说明</h4>
+<table class="ann ann-req"><thead><tr><th>编号</th><th>区域</th><th>需求说明</th><th>交互说明</th></tr></thead><tbody>
+<tr><td><span class="no">①</span></td><td>指标名称</td><td>必填；<b>全局同名唯一</b>，避免资产混淆</td><td>重名拦截 Toast</td></tr>
+<tr><td><span class="no">②</span></td><td>单位</td><td>展示口径，可改</td><td>文本输入</td></tr>
+<tr><td><span class="no">③</span></td><td>保存</td><td>回写列表与详情头</td><td>成功 Toast</td></tr>
+</tbody></table>
+</div></div>
+  <h3>9.5 添加最新值</h3>
+  <div class="card"><div class="shot" data-zoom><img src="prd-screenshots/indicator-center/15-add-latest.png" alt="添加最新值"><div class="cap"><span>添加最新值</span><span>点击图片可放大</span></div></div><div class="body">
+    <h4>区域需求与交互说明</h4>
+<table class="ann ann-req"><thead><tr><th>编号</th><th>区域</th><th>需求说明</th><th>交互说明</th></tr></thead><tbody>
+<tr><td><span class="no">①</span></td><td>只读上下文</td><td>明确补数对象与当前最新点</td><td>名称、频度、当前最新只读</td></tr>
+<tr><td><span class="no">②</span></td><td>预测日期 / 预测值</td><td>人工补最新点（演示字段名）；值须为有效数字</td><td>日期 + 数值；校验后写入并同步列表「最新值」</td></tr>
+<tr><td><span class="no">③</span></td><td>保存</td><td>更新 <code>LATEST_MAP</code> 演示存储</td><td>Toast 成功</td></tr>
+</tbody></table>
+</div></div>
+  <h3>9.6 数据详情 Tab</h3>
+  <div class="card"><div class="body">
+    <h4>区域需求与交互说明</h4>
+<table class="ann ann-req"><thead><tr><th>编号</th><th>区域</th><th>需求说明</th><th>交互说明</th></tr></thead><tbody>
+<tr><td><span class="no">①</span></td><td>基本信息</td><td>ID、名称、目录、频度、单位</td><td>只读卡片</td></tr>
+<tr><td><span class="no">②</span></td><td>来源与计算</td><td>来源、计算类型、起始/更新、添加人</td><td>只读卡片</td></tr>
+<tr><td><span class="no">③</span></td><td>数据明细</td><td>近 60 日点位抽查；最新点高亮</td><td>默认可折叠；展示条数</td></tr>
+</tbody></table>
+</div></div>
+</section>
+
+<section class="section" id="s10">
+  <h2><span class="n">10</span>指标溯源（计算指标）</h2>
+  <div class="card"><div class="shot" data-zoom><img src="prd-screenshots/indicator-center/13-lineage.png" alt="指标溯源"><div class="cap"><span>指标溯源</span><span>点击图片可放大</span></div></div><div class="body">
+    <h4>区域需求与交互说明</h4>
+<table class="ann ann-req"><thead><tr><th>编号</th><th>区域</th><th>需求说明</th><th>交互说明</th></tr></thead><tbody>
+<tr><td><span class="no">①</span></td><td>入口约束</td><td><b>仅计算指标</b>可溯源；原始指标提示「无需溯源」</td><td>详情头「指标溯源」→「关联图」</td></tr>
+<tr><td><span class="no">②</span></td><td>关联图结构</td><td>展示 root → 中间层 → 叶子参数（字母）依赖链，支撑审计与排错</td><td>树形/图布局；中间层可收起叶子</td></tr>
+<tr><td><span class="no">③</span></td><td>节点悬浮</td><td>查看公式片段、来源摘要</td><td>Tip 浮层</td></tr>
+<tr><td><span class="no">④</span></td><td>节点点击</td><td>跳转查看关联指标（演示）</td><td>Toast / 演示反馈</td></tr>
+<tr><td><span class="no">⑤</span></td><td>小地图</td><td>大图导航</td><td>右下缩略</td></tr>
+<tr><td><span class="no">⑥</span></td><td>「关联指标」菜单</td><td>规划为列表清单；原型仅 Toast 数量</td><td>不打开完整列表页</td></tr>
+</tbody></table>
+</div></div>
+  <div class="info"><b>背景：</b> 关联图画布为纯白底（无网格），保证阅读清晰。</div>
+</section>
+
+<section class="section" id="s11">
+  <h2><span class="n">11</span>端到端路径（速查）</h2>
+  <div class="flow">
+    <div class="f">
+      <b>A. 从数据源消费到分析</b>
+      <span>数据源绑定/手工加入 → 指标中心目录可见 → 卡片/列表浏览 → 详情看走势与时间段 → 图库选指标绘图</span>
+    </div>
+    <div class="f">
+      <b>B. 新建计算指标</b>
+      <span>指标中心 → 计算指标 → 选算子 → 填名称/目录 → 精准匹配参数 → 设空值策略 → 保存 → 详情打开溯源关联图</span>
+    </div>
+    <div class="f">
+      <b>C. 代码定制指标</b>
+      <span>代码运算 →（可选 AI 套用模板）→ 编辑脚本 → 试算通过 → 填名称保存 → 列表出现计算/代码类指标</span>
+    </div>
+    <div class="f">
+      <b>D. 引用替换</b>
+      <span>替换指标 → 选原指标与目标 → 全部替换 → 图/表/计算引用更新（演示）</span>
+    </div>
+    <div class="f">
+      <b>E. 目录重组</b>
+      <span>选中目录 → 批量移动 → 勾选指标 → 级联目标目录 → 确认 → 树角标与列表目录字段更新</span>
+    </div>
+  </div>
+</section>
+
+<section class="section" id="s12">
+  <h2><span class="n">12</span>业务规则汇总</h2>
+  <div class="card"><div class="body">
+    <h4>说明</h4>
+<table class="ann"><thead><tr><th>规则</th><th>说明</th></tr></thead><tbody>
+<tr><td>基础 vs 计算</td><td>标签区分；溯源/重算/公式/关联图仅计算指标</td></tr>
+<tr><td>同名唯一</td><td>编辑信息、目录同级/一级名称均不可冲突</td></tr>
+<tr><td>目录名</td><td>禁止 <code>/ \</code>；删除含子目录</td></tr>
+<tr><td>添加重复</td><td>已存在进入 ack 模式，禁止再次添加</td></tr>
+<tr><td>替换</td><td>原 ≠ 目标；影响图/表/计算/逻辑图（产品文案）</td></tr>
+<tr><td>运算上限</td><td>参数 ≤10、分段 ≤5、扩散子指标 ≤20</td></tr>
+<tr><td>空值 35 天</td><td>「查找前后 35 天最近值」策略</td></tr>
+<tr><td>分页</td><td>12 条/页</td></tr>
+<tr><td>时间段</td><td>最近 N 年 1–50；区间起 ≤ 止；默认 5 年</td></tr>
+<tr><td>季节性 vs 同比</td><td>季节性模式下隐藏去年同期</td></tr>
+<tr><td>代码保存</td><td>编码自动生成只读；试算需 <code>return</code> 数值数组</td></tr>
+<tr><td>级联目录</td><td>计算指标目录、批量移动目标等与数据源一致：限宽高、可选 portal</td></tr>
+</tbody></table>
+</div></div>
+</section>
+
+<section class="section" id="s13">
+  <h2><span class="n">13</span>验收清单</h2>
+  <h3 style="font-size:14px">浏览与目录</h3>
+<ul class="check">
+<li>侧栏进入指标中心，布局为目录 + 指标区</li>
+<li>目录选中过滤、再点取消；搜索与精准匹配生效且与右侧联动</li>
+<li>添加一级/子目录、重命名、删除（含子目录）符合校验</li>
+<li>批量移动：勾选 + 级联目标后目录字段与角标更新</li>
+</ul>
+  <h3 style="font-size:14px">列表与筛选</h3>
+<ul class="check">
+<li>卡片/列表切换；列表含启停与删除确认</li>
+<li>创建时间筛选、快捷天数、重置；分页 12 条</li>
+<li>计数展示基础/计算拆分</li>
+</ul>
+  <h3 style="font-size:14px">创建与计算</h3>
+<ul class="check">
+<li>添加指标：多选、已存在 ack、成功写入基础指标</li>
+<li>计算指标：算子切换、名称/目录必填、参数上限拦截、保存为计算类型</li>
+<li>替换：两端必选且不同</li>
+<li>代码运算：试算错误提示；名称必填可保存</li>
+<li>数据调整入口提示「规划中」</li>
+</ul>
+  <h3 style="font-size:14px">详情与溯源</h3>
+<ul class="check">
+<li>全屏详情：返回、切换左侧指标、走势/数据 Tab</li>
+<li>时间段、季节性/公历/春节、同比与季节性互斥</li>
+<li>编辑信息同名校验；添加最新值同步列表</li>
+<li>仅计算指标显示溯源；关联图可展开/悬浮；原始指标不可溯源</li>
+</ul>
+</section>
+
+<section class="section" id="s14">
+  <h2><span class="n">14</span>截图索引</h2>
+  <div class="card"><div class="body">
+    <h4>说明</h4>
+<table class="ann"><thead><tr><th>文件</th><th>内容</th></tr></thead><tbody>
+<tr><td><code>01-overview.png</code></td><td>指标中心总览</td></tr>
+<tr><td><code>02-dir-filtered.png</code></td><td>目录选中过滤</td></tr>
+<tr><td><code>03-list-view.png</code></td><td>列表视图</td></tr>
+<tr><td><code>04-date-filter.png</code></td><td>创建时间筛选</td></tr>
+<tr><td><code>05-add-indicator.png</code></td><td>添加指标</td></tr>
+<tr><td><code>06-calc-indicator.png</code></td><td>计算指标</td></tr>
+<tr><td><code>07-replace.png</code></td><td>替换指标</td></tr>
+<tr><td><code>08-code.png</code></td><td>代码运算</td></tr>
+<tr><td><code>09-batch-move.png</code></td><td>批量移动</td></tr>
+<tr><td><code>10-detail.png</code></td><td>详情走势</td></tr>
+<tr><td><code>11-detail-season.png</code></td><td>季节性图</td></tr>
+<tr><td><code>12-time-range.png</code></td><td>时间段设置</td></tr>
+<tr><td><code>13-lineage.png</code></td><td>指标溯源关联图</td></tr>
+<tr><td><code>14-edit-info.png</code></td><td>编辑信息</td></tr>
+<tr><td><code>15-add-latest.png</code></td><td>添加最新值</td></tr>
+<tr><td><code>16-dir-add.png</code></td><td>添加目录</td></tr>
+</tbody></table>
+</div></div>
+</section>
+
+
+    <p class="foot">指标中心模块 · 原型交互批注需求 V1.0 · 截图目录 docs/prd-screenshots/indicator-center/ · 原型 indicator-center.html</p>
+  </main>
+</div>
+
+<div class="lightbox" id="lightbox" title="点击关闭">
+  <img id="lightboxImg" alt="放大预览">
+</div>
+
+<script>
+(function(){
+  var box = document.getElementById("lightbox");
+  var img = document.getElementById("lightboxImg");
+  document.querySelectorAll("[data-zoom]").forEach(function(el){
+    el.addEventListener("click", function(){
+      img.src = el.querySelector("img").getAttribute("src");
+      box.classList.add("show");
+    });
+  });
+  box.addEventListener("click", function(){ box.classList.remove("show"); img.src=""; });
+  document.addEventListener("keydown", function(e){
+    if(e.key==="Escape"){ box.classList.remove("show"); img.src=""; }
+  });
+  var items = Array.prototype.slice.call(document.querySelectorAll(".nav a.item"));
+  var sections = items.map(function(a){ return document.querySelector(a.getAttribute("href")); });
+  function sync(){
+    var y = window.scrollY + 80, cur = 0;
+    for(var i=0;i<sections.length;i++){ if(sections[i] && sections[i].offsetTop <= y) cur=i; }
+    items.forEach(function(a,i){ a.classList.toggle("on", i===cur); });
+  }
+  window.addEventListener("scroll", sync, { passive:true });
+  sync();
+})();
+</script>
+</body>
+</html>

@@ -1,0 +1,272 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>草稿箱 · AILab AI指标工坊</title>
+<style>
+  :root{
+    --primary:#1664FF; --primary-hover:#0E4FE6; --primary-bg:#E8F3FF;
+    --text:#1D2129; --text-2:#4E5969; --text-3:#86909C;
+    --border:#E5E6EB; --border-input:#D9D9E0;
+    --bg:#F2F3F5; --card:#ffffff;
+  }
+  *{margin:0;padding:0;box-sizing:border-box}
+  html,body{height:100%}
+  body{
+    font-family:Roboto,"PingFang SC","Hiragino Sans GB","Microsoft YaHei",sans-serif;
+    background:var(--bg); color:var(--text); font-size:14px; overflow:hidden;
+  }
+  button{font-family:inherit;cursor:pointer}
+  .app{display:flex;height:100vh;background:var(--bg)}
+  .sidebar{
+    width:196px;background:transparent;border-right:none;
+    display:flex;flex-direction:column;flex-shrink:0;transition:width .2s ease;
+  }
+  .logo{
+    height:56px;display:flex;align-items:center;gap:8px;padding:0 12px;border-bottom:none;
+  }
+  .logo .brand-mark{width:28px;height:28px;border-radius:7px;flex-shrink:0;display:block;object-fit:contain}
+  .logo .name{font-weight:700;font-size:14px;color:var(--text);letter-spacing:-.02em;white-space:nowrap}
+  .logo .sub{font-size:12px;color:var(--text-3);white-space:nowrap;font-weight:400}
+  .menu{flex:1;overflow-y:auto;padding:8px}
+  .menu-item{
+    width:100%;display:flex;align-items:center;gap:10px;height:40px;padding:0 12px;margin-bottom:4px;
+    border:none;background:none;border-radius:8px;cursor:pointer;font-size:14px;color:var(--text);text-align:left;
+    font-weight:400;line-height:40px;transition:background .15s,color .15s;
+  }
+  .menu-item:hover{background:#e8e9eb;color:var(--text)}
+  .menu-item:active{background:#e8e8f0}
+  .menu-item.active{background:var(--primary-bg);color:var(--primary);font-weight:500}
+  .menu-item .mi-icon{display:flex;flex-shrink:0;align-items:center;justify-content:center;width:15px;height:15px;color:inherit}
+  .menu-item .mi-icon svg{display:block}
+  .menu-item .mi-arrow{margin-left:auto;color:var(--text-3);display:flex;transition:transform .15s}
+  .menu-item.expanded .mi-arrow{transform:rotate(180deg)}
+  .sub-menu{display:none;padding:0 0 4px}
+  .sub-menu.open{display:block}
+  .sub-item{
+    width:100%;display:flex;align-items:center;height:36px;padding:0 12px 0 37px;margin-bottom:2px;
+    border:none;background:none;border-radius:8px;cursor:pointer;font-size:13px;color:var(--text-2);text-align:left;
+    transition:background .15s,color .15s;
+  }
+  .sub-item:hover{background:#e8e9eb;color:var(--text)}
+  .sub-item.active,.sub-item.on{background:var(--primary-bg);color:var(--primary);font-weight:500}
+  .sub-item .sd{display:none}
+
+  .sidebar-foot{
+    flex-shrink:0;padding:8px 12px;
+    display:flex;align-items:center;
+  }
+  .sb-collapse{
+    width:32px;height:32px;border:none;border-radius:6px;background:transparent;
+    color:var(--text-2);display:flex;align-items:center;justify-content:center;padding:0;cursor:pointer;
+  }
+  .sb-collapse:hover{background:#e8e9eb;color:var(--text)}
+  .app.nav-collapsed .sidebar{width:56px;overflow:visible;z-index:40}
+  .app.nav-collapsed .logo{justify-content:center;padding:0 8px}
+  .app.nav-collapsed .logo .name,
+  .app.nav-collapsed .logo .sub{display:none}
+  .app.nav-collapsed .menu{padding:8px 6px;overflow:visible}
+  .app.nav-collapsed .menu-item{
+    justify-content:center;padding:0;gap:0;font-size:0;line-height:0;overflow:visible;position:relative;
+  }
+  .app.nav-collapsed .menu-item .mi-icon{font-size:14px;line-height:1}
+  .app.nav-collapsed .menu-item .mi-arrow,
+  .app.nav-collapsed .sub-menu,
+  .app.nav-collapsed .sub-item .cnt{display:none !important}
+  .app.nav-collapsed .sidebar-foot{justify-content:center;padding:8px;overflow:visible;position:relative}
+  .app.nav-collapsed .sb-collapse{position:relative}
+  .app.nav-collapsed .sb-collapse svg{transform:scaleX(-1)}
+  .app.nav-collapsed .menu-item[data-tip]::after,
+  .app.nav-collapsed .sb-collapse[data-tip]::after{
+    content:attr(data-tip);
+    position:absolute;left:calc(100% + 10px);top:50%;transform:translateY(-50%);
+    background:#fff;color:var(--text);font-size:13px;font-weight:400;line-height:20px;
+    padding:6px 12px;border:1px solid var(--border);border-radius:6px;
+    box-shadow:0 4px 14px rgba(15,23,42,.10);white-space:nowrap;pointer-events:none;
+    opacity:0;visibility:hidden;z-index:80;
+  }
+  .app.nav-collapsed .menu-item[data-tip]::before,
+  .app.nav-collapsed .sb-collapse[data-tip]::before{
+    content:"";position:absolute;left:calc(100% + 5px);top:50%;width:8px;height:8px;
+    background:#fff;border-left:1px solid var(--border);border-bottom:1px solid var(--border);
+    transform:translateY(-50%) rotate(45deg);pointer-events:none;
+    opacity:0;visibility:hidden;z-index:81;
+  }
+  .app.nav-collapsed .menu-item[data-tip]:hover::after,
+  .app.nav-collapsed .menu-item[data-tip]:hover::before,
+  .app.nav-collapsed .sb-collapse[data-tip]:hover::after,
+  .app.nav-collapsed .sb-collapse[data-tip]:hover::before{
+    opacity:1;visibility:visible;
+  }
+
+  .workspace{flex:1;display:flex;flex-direction:column;min-width:0}
+
+  .content,.bench{
+    background:#fff;
+    border-top-left-radius:16px;
+  }
+
+  .topbar{
+    height:52px;background:transparent;border-bottom:none;flex-shrink:0;
+    display:flex;align-items:center;gap:14px;padding:0 20px;
+  }
+  .topbar .crumb{font-size:14px}
+  .topbar .crumb b{font-weight:600}
+  .topbar .crumb .sep{color:var(--text-3);margin:0 8px}
+  .topbar .crumb .cur{color:var(--text);font-weight:500}
+  .topbar-right{margin-left:auto;display:flex;align-items:center;gap:16px}
+  .lang-btn{
+    height:30px;padding:0 14px;border-radius:6px;border:1px solid var(--border-input);
+    background:#fff;font-size:12px;color:var(--text-2);
+  }
+  .bell{border:none;background:none;color:var(--text-2);position:relative;display:flex}
+  .bell .dot{position:absolute;top:0;right:0;width:7px;height:7px;background:#e34d59;border-radius:50%;border:1.5px solid #fff}
+  .user{display:flex;align-items:center;gap:8px;border:none;background:none;color:var(--text)}
+  .user .avatar{
+    width:28px;height:28px;border-radius:50%;background:#ebebf5;color:var(--primary);
+    display:grid;place-items:center;font-size:12px;font-weight:600;
+  }
+  .user .uname{font-size:13px}
+  .content{flex:1;overflow:auto;padding:20px 24px}
+  .intro{
+    background:#fff;border:1px solid var(--border);border-radius:12px;padding:16px 18px;margin-bottom:16px;
+  }
+  .intro h1{font-size:16px;font-weight:600;margin-bottom:6px}
+  .intro p{font-size:13px;color:var(--text-2);line-height:1.65}
+  .cards{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:14px}
+  .draft-card{
+    background:#fff;border:1px solid var(--border);border-radius:12px;padding:18px 18px 16px;
+    text-align:left;display:flex;flex-direction:column;gap:10px;transition:border-color .15s,box-shadow .15s;
+  }
+  .draft-card:hover{border-color:var(--primary);box-shadow:0 8px 20px rgba(82,82,255,.08)}
+  .draft-card .ico{
+    width:36px;height:36px;border-radius:10px;background:var(--primary-bg);color:var(--primary);
+    display:grid;place-items:center;
+  }
+  .draft-card .ttl{font-size:15px;font-weight:600}
+  .draft-card .desc{font-size:12.5px;color:var(--text-3);line-height:1.6;flex:1}
+  .draft-card .meta{display:flex;align-items:center;gap:8px;font-size:12px;color:var(--text-3)}
+  .tag{padding:2px 8px;border-radius:4px;background:#f4f6f9;color:var(--text-2)}
+  .go{margin-left:auto;color:var(--primary);font-size:12.5px}
+</style>
+</head>
+<body>
+<script src="icons.js"></script>
+<div class="app">
+  <aside class="sidebar">
+    <div class="logo">
+      <img class="brand-mark" src="assets/ailab-mark.png" alt="AILab" width="28" height="28">
+      <span class="name">AILab</span>
+      <span class="sub">AI指标工坊</span>
+    </div>
+    <nav class="menu">
+      <button class="menu-item"><span class="mi-icon"><svg class="i" width="15" height="15" aria-hidden="true"><use href="#i-nav-bi"></use></svg></span>BI看板</button>
+      <button class="menu-item"><span class="mi-icon"><svg class="i" width="15" height="15" aria-hidden="true"><use href="#i-nav-report"></use></svg></span>研报管理<span class="mi-arrow"><svg class="i" width="10" height="10" aria-hidden="true"><use href="#i-caret-down"></use></svg></span></button>
+      <button class="menu-item"><span class="mi-icon"><svg class="i" width="15" height="15" aria-hidden="true"><use href="#i-nav-ppt"></use></svg></span>智能ppt</button>
+      <button class="menu-item" onclick="location.href='chart-gallery.html'"><span class="mi-icon"><svg class="i" width="15" height="15" aria-hidden="true"><use href="#i-nav-gallery"></use></svg></span>图库</button>
+      <button class="menu-item" onclick="location.href='indicator-center.html'"><span class="mi-icon"><svg class="i" width="15" height="15" aria-hidden="true"><use href="#i-nav-indicator"></use></svg></span>指标中心</button>
+      <button class="menu-item"><span class="mi-icon"><svg class="i" width="15" height="15" aria-hidden="true"><use href="#i-nav-table"></use></svg></span>表格<span class="mi-arrow"><svg class="i" width="10" height="10" aria-hidden="true"><use href="#i-caret-down"></use></svg></span></button>
+      <button class="menu-item" id="menuDsNav" onclick="location.href='data-source.html'"><span class="mi-icon"><svg class="i" width="15" height="15" aria-hidden="true"><use href="#i-nav-datasource"></use></svg></span>数据源<span class="mi-arrow" id="dsMenuArrow"><svg class="i" width="10" height="10" aria-hidden="true"><use href="#i-caret-down"></use></svg></span></button>
+      <div class="sub-menu" id="dsSubMenu">
+        <button class="sub-item" onclick="location.href='data-source.html?src=上海钢联'"><span class="sd"></span>上海钢联</button>
+        <button class="sub-item" onclick="location.href='data-source.html?src=同花顺'"><span class="sd"></span>同花顺</button>
+        <button class="sub-item" onclick="location.href='data-source.html?src=SMM'"><span class="sd"></span>SMM</button>
+      </div>
+      <button class="menu-item"><span class="mi-icon"><svg class="i" width="15" height="15" aria-hidden="true"><use href="#i-trend"></use></svg></span>预测指标</button>
+      <button class="menu-item"><span class="mi-icon"><svg class="i" width="15" height="15" aria-hidden="true"><use href="#i-nav-link"></use></svg></span>外部链接</button>
+      <button class="menu-item active expanded" id="menuDrafts"><span class="mi-icon"><svg class="i" width="15" height="15" aria-hidden="true"><use href="#i-nav-draft"></use></svg></span>草稿箱<span class="mi-arrow"><svg class="i" width="10" height="10" aria-hidden="true"><use href="#i-caret-down"></use></svg></span></button>
+      <div class="sub-menu open" id="subDrafts">
+        <button class="sub-item active" onclick="location.href='drafts.html'"><span class="sd"></span>全部草稿</button>
+        <button class="sub-item" onclick="location.href='data-source.html?draft=task'"><span class="sd"></span>任务调度</button>
+      </div>
+    </nav>
+    <div class="sidebar-foot">
+      <button type="button" class="sb-collapse" title="收起菜单"><svg class="i" width="16" height="16" aria-hidden="true"><use href="#i-panel-collapse"></use></svg></button>
+    </div>
+  </aside>
+  <div class="workspace">
+    <header class="topbar">
+      <div class="crumb"><b>草稿箱</b><span class="sep">/</span><span class="cur">全部草稿</span></div>
+      <div class="topbar-right">
+        <button class="bell" title="通知"><svg class="i" width="17" height="17" aria-hidden="true"><use href="#i-bell"></use></svg><span class="dot"></span></button>
+        <button class="user"><span class="avatar">文</span><span class="uname">吴开文</span><svg class="i" width="10" height="10" aria-hidden="true"><use href="#i-caret-down-2"></use></svg></button>
+      </div>
+    </header>
+    <main class="content">
+      <div class="intro">
+        <h1>草稿箱</h1>
+        <p>存放本期暂不启用的设计稿，正式菜单里不再露出入口。需要时从这里打开，方便后期继续调整。</p>
+      </div>
+      <div class="cards">
+        <button class="draft-card" onclick="location.href='data-source.html?draft=task'">
+          <span class="ico"><svg class="i" width="18" height="18" aria-hidden="true"><use href="#i-g-106c566e"></use></svg></span>
+          <span class="ttl">任务调度</span>
+          <span class="desc">原数据源配置页右上角的底部抽屉。含任务列表、调度分类筛选、可视化排期与执行日志。本期从数据源主流程拿掉，完整交互仍保留在此。</span>
+          <span class="meta"><span class="tag">数据源</span><span class="tag">弹窗 / 抽屉</span><span class="go">打开设计稿 →</span></span>
+        </button>
+      </div>
+    </main>
+  </div>
+</div>
+<script>
+document.getElementById("menuDrafts").addEventListener("click", function(){
+  this.classList.toggle("expanded");
+  document.getElementById("subDrafts").classList.toggle("open");
+});
+document.getElementById("dsMenuArrow").addEventListener("click", function(e){
+  e.stopPropagation();
+  document.getElementById("menuDsNav").classList.toggle("expanded");
+  document.getElementById("dsSubMenu").classList.toggle("open");
+});
+</script>
+
+<script>
+(function(){
+  var menu = document.querySelector(".sidebar .menu");
+  if(!menu || menu.dataset.volcBound === "1") return;
+  menu.dataset.volcBound = "1";
+  menu.addEventListener("click", function(e){
+    if(e.target.closest(".mi-arrow")) return;
+    var sub = e.target.closest(".sub-item");
+    if(sub && menu.contains(sub)){
+      var wrap = sub.parentElement;
+      if(wrap) wrap.querySelectorAll(".sub-item").forEach(function(b){ b.classList.remove("active","on"); });
+      sub.classList.add("active");
+      menu.querySelectorAll(":scope > .menu-item").forEach(function(b){ b.classList.remove("active"); });
+      var prev = wrap && wrap.previousElementSibling;
+      if(prev && prev.classList.contains("menu-item")) prev.classList.add("active");
+      return;
+    }
+    var item = e.target.closest(".menu-item");
+    if(!item || !menu.contains(item) || item.closest(".sub-menu")) return;
+    menu.querySelectorAll(":scope > .menu-item").forEach(function(b){ b.classList.remove("active"); });
+    item.classList.add("active");
+  });
+})();
+</script>
+
+<script>
+(function(){
+  var app = document.querySelector(".app");
+  if(!app) return;
+  document.querySelectorAll(".sidebar .menu-item").forEach(function(b){
+    if(b.getAttribute("data-tip")) return;
+    var t = "";
+    b.childNodes.forEach(function(n){ if(n.nodeType === 3) t += n.textContent; });
+    t = t.replace(/\s+/g, " ").trim();
+    if(t) b.setAttribute("data-tip", t);
+  });
+  document.querySelectorAll(".sb-collapse").forEach(function(b){
+    if(!b || b.dataset.navBound === "1") return;
+    b.dataset.navBound = "1";
+    if(!b.getAttribute("data-tip")) b.setAttribute("data-tip", "展开菜单");
+    b.addEventListener("click", function(){
+      app.classList.toggle("nav-collapsed");
+      b.setAttribute("data-tip", app.classList.contains("nav-collapsed") ? "展开菜单" : "收起菜单");
+    });
+  });
+})();
+</script>
+</body>
+</html>

@@ -1,0 +1,2250 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>手工录入数据 · AILab AI指标工坊</title>
+<style>
+  :root{
+    --primary:#1664FF; --primary-hover:#0E4FE6; --primary-bg:#E8F3FF;
+    --text:#1D2129; --text-2:#4E5969; --text-3:#86909C;
+    --border:#E5E6EB; --border-input:#D9D9E0;
+    --bg:#F2F3F5; --card:#ffffff; --danger:#e34d59;
+    --radius:8px; --radius-lg:12px;
+    --sidebar-w:196px;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{
+    font-family:Roboto,"PingFang SC","Hiragino Sans GB","Microsoft YaHei",sans-serif;
+    color:var(--text);background:var(--bg);height:100vh;overflow:hidden;font-size:14px;
+  }
+  button,input,select{font:inherit}
+  .app{display:flex;height:100vh;background:var(--bg)}
+  .sidebar{
+    width:var(--sidebar-w);background:transparent;border-right:none;
+    color:var(--text);display:flex;flex-direction:column;flex-shrink:0;transition:width .2s ease;
+  }
+  .logo{
+    height:56px;display:flex;align-items:center;gap:8px;padding:0 12px;border-bottom:none;
+  }
+  .logo .brand-mark{width:28px;height:28px;border-radius:7px;flex-shrink:0;display:block;object-fit:contain}
+  .logo .name{font-size:14px;font-weight:700;color:var(--text);letter-spacing:-.02em;white-space:nowrap}
+  .logo .sub{font-size:12px;color:var(--text-3);white-space:nowrap;font-weight:400}
+  .menu{padding:8px;overflow:auto;flex:1}
+  .menu-item{
+    width:100%;display:flex;align-items:center;gap:10px;height:40px;padding:0 12px;margin-bottom:4px;
+    border:none;background:none;border-radius:8px;cursor:pointer;font-size:14px;color:var(--text);text-align:left;
+    font-weight:400;line-height:40px;transition:background .15s,color .15s;
+  }
+  .menu-item:hover{background:#e8e9eb;color:var(--text)}
+  .menu-item:active{background:#e8e8f0}
+  .menu-item.active{background:var(--primary-bg);color:var(--primary);font-weight:500}
+  .mi-icon{display:flex;flex-shrink:0;align-items:center;justify-content:center;width:15px;height:15px;color:inherit}
+  .mi-arrow{margin-left:auto;color:var(--text-3);display:flex;transition:transform .15s}
+  .menu-item.expanded .mi-arrow{transform:rotate(180deg)}
+  .sub-menu{display:none;padding:0 0 4px}
+  .sub-menu.open{display:block}
+  .sub-item{
+    width:100%;display:flex;align-items:center;height:36px;padding:0 12px 0 37px;margin-bottom:2px;
+    border:none;background:none;border-radius:8px;cursor:pointer;font-size:13px;color:var(--text-2);text-align:left;
+    transition:background .15s,color .15s;
+  }
+  .sub-item:hover{background:#e8e9eb;color:var(--text)}
+  .sub-item.active,.sub-item.on{background:var(--primary-bg);color:var(--primary);font-weight:500}
+  .sub-item .sd{display:none}
+
+  .sidebar-foot{
+    flex-shrink:0;padding:8px 12px;
+    display:flex;align-items:center;
+  }
+  .sb-collapse{
+    width:32px;height:32px;border:none;border-radius:6px;background:transparent;
+    color:var(--text-2);display:flex;align-items:center;justify-content:center;padding:0;cursor:pointer;
+  }
+  .sb-collapse:hover{background:#e8e9eb;color:var(--text)}
+  .app.nav-collapsed .sidebar{width:56px;overflow:visible;z-index:40}
+  .app.nav-collapsed .logo{justify-content:center;padding:0 8px}
+  .app.nav-collapsed .logo .name,
+  .app.nav-collapsed .logo .sub{display:none}
+  .app.nav-collapsed .menu{padding:8px 6px;overflow:visible}
+  .app.nav-collapsed .menu-item{
+    justify-content:center;padding:0;gap:0;font-size:0;line-height:0;overflow:visible;position:relative;
+  }
+  .app.nav-collapsed .menu-item .mi-icon{font-size:14px;line-height:1}
+  .app.nav-collapsed .menu-item .mi-arrow,
+  .app.nav-collapsed .sub-menu,
+  .app.nav-collapsed .sub-item .cnt{display:none !important}
+  .app.nav-collapsed .sidebar-foot{justify-content:center;padding:8px;overflow:visible;position:relative}
+  .app.nav-collapsed .sb-collapse{position:relative}
+  .app.nav-collapsed .sb-collapse svg{transform:scaleX(-1)}
+  .app.nav-collapsed .menu-item[data-tip]::after,
+  .app.nav-collapsed .sb-collapse[data-tip]::after{
+    content:attr(data-tip);
+    position:absolute;left:calc(100% + 10px);top:50%;transform:translateY(-50%);
+    background:#fff;color:var(--text);font-size:13px;font-weight:400;line-height:20px;
+    padding:6px 12px;border:1px solid var(--border);border-radius:6px;
+    box-shadow:0 4px 14px rgba(15,23,42,.10);white-space:nowrap;pointer-events:none;
+    opacity:0;visibility:hidden;z-index:80;
+  }
+  .app.nav-collapsed .menu-item[data-tip]::before,
+  .app.nav-collapsed .sb-collapse[data-tip]::before{
+    content:"";position:absolute;left:calc(100% + 5px);top:50%;width:8px;height:8px;
+    background:#fff;border-left:1px solid var(--border);border-bottom:1px solid var(--border);
+    transform:translateY(-50%) rotate(45deg);pointer-events:none;
+    opacity:0;visibility:hidden;z-index:81;
+  }
+  .app.nav-collapsed .menu-item[data-tip]:hover::after,
+  .app.nav-collapsed .menu-item[data-tip]:hover::before,
+  .app.nav-collapsed .sb-collapse[data-tip]:hover::after,
+  .app.nav-collapsed .sb-collapse[data-tip]:hover::before{
+    opacity:1;visibility:visible;
+  }
+
+
+  .workspace{flex:1;display:flex;flex-direction:column;min-width:0}
+
+  .content,.bench{
+    background:#fff;
+    border-top-left-radius:16px;
+  }
+
+  .topbar{
+    height:52px;background:transparent;border-bottom:none;
+    display:flex;align-items:center;gap:14px;padding:0 20px;flex-shrink:0;
+  }
+  .crumb{font-size:14px;color:var(--text-2)}
+  .crumb b{color:var(--text);font-weight:600}
+  .crumb .sep{margin:0 8px;color:var(--text-3)}
+  .crumb .cur{color:var(--text);font-weight:500}
+  .topbar-right{margin-left:auto;display:flex;align-items:center;gap:16px}
+  .lang-btn,.bell,.user{border:none;background:none;cursor:pointer;color:var(--text-2);font-size:13px}
+  .user{display:flex;align-items:center;gap:8px;padding:4px 6px;border-radius:8px}
+  .user:hover{background:#f7f7f9}
+  .avatar{width:28px;height:28px;border-radius:50%;background:#ebebf5;color:var(--primary);display:grid;place-items:center;font-size:12px;font-weight:600}
+  .content{flex:1;min-height:0;padding:16px;display:flex;flex-direction:column}
+  .panel{
+    background:transparent;border:none;border-radius:0;padding:0;
+    display:flex;flex-direction:column;flex:1;min-height:0;
+  }
+  .toolbar{
+    display:flex;align-items:center;justify-content:flex-end;gap:8px;
+    margin-bottom:12px;flex-wrap:wrap;flex-shrink:0;
+  }
+  .btn{
+    height:34px;padding:0 18px;border-radius:6px;border:1px solid var(--border-input);
+    background:#fff;color:var(--text);font-size:13px;cursor:pointer;
+    display:inline-flex;align-items:center;gap:6px;white-space:nowrap;transition:all .15s;
+  }
+  .btn:hover{border-color:var(--primary);color:var(--primary)}
+  .btn.primary{background:var(--primary);border-color:var(--primary);color:#fff}
+  .btn.primary:hover{background:var(--primary-hover);border-color:var(--primary-hover);color:#fff}
+  .btn.soft{background:var(--primary-bg);border-color:transparent;color:var(--primary)}
+  .btn.soft:hover{background:#e0e0f5;border-color:transparent;color:var(--primary)}
+  .btn:disabled,
+  .btn.primary:disabled{
+    background:#f2f3f5;border-color:#e5e6eb;color:#c9cdd4;cursor:not-allowed;
+  }
+  .btn:disabled:hover,
+  .btn.primary:disabled:hover{
+    background:#f2f3f5;border-color:#e5e6eb;color:#c9cdd4;
+  }
+  .sel{
+    height:32px;padding:0 10px;border:1px solid var(--border-input);border-radius:6px;background:#fff;color:var(--text-2);font-size:13px;min-width:130px;
+  }
+  .chk{display:inline-flex;align-items:center;gap:6px;font-size:13px;color:var(--text-2);cursor:pointer;user-select:none}
+  .chk input{accent-color:var(--primary)}
+  .link{
+    border:none;background:none;color:var(--primary);font-size:13px;cursor:pointer;
+    display:inline-flex;align-items:center;gap:4px;height:34px;padding:0 10px;
+  }
+  .link:hover{text-decoration:underline;color:var(--primary-hover)}
+  .body-row{display:flex;gap:14px;align-items:stretch;flex:1;min-height:0;position:relative}
+  .dir-panel{
+    width:300px;flex:none;background:#fff;border:1px solid var(--border);border-radius:var(--radius-lg);
+    padding:16px;position:relative;display:flex;flex-direction:column;
+    max-height:100%;min-height:0;
+    transition:width .2s ease,padding .2s ease,border-color .2s;
+  }
+  .dir-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px}
+  .dir-head h2{font-size:15px;font-weight:600;margin:0}
+  .dir-head .only-mine{display:flex;align-items:center;gap:6px;font-size:12px;color:var(--text-2);cursor:pointer}
+  .dir-search{display:flex;align-items:center;gap:8px;margin-bottom:12px}
+  .dir-search .ds-input{
+    flex:1;display:flex;align-items:center;gap:6px;border:1px solid var(--border-input);border-radius:6px;
+    padding:0 10px;height:32px;background:#fff;min-width:0;
+  }
+  .dir-search .ds-input:focus-within{border-color:var(--primary);box-shadow:0 0 0 2px rgba(82,82,255,.16)}
+  .dir-search .ds-input input{flex:1;border:none;outline:none;height:100%;min-width:0;color:var(--text);font-size:12.5px;background:transparent}
+  .dir-search .ds-input svg{color:var(--text-3);flex-shrink:0}
+  .dir-tree{flex:1;overflow-y:auto;margin:0 -6px;padding:0 6px;min-height:0}
+  .dir-item{
+    display:flex;align-items:center;gap:6px;padding:7px 10px;border-radius:6px;font-size:13px;
+    color:var(--text);cursor:pointer;user-select:none;position:relative;width:100%;box-sizing:border-box;
+  }
+  .dir-item:hover{background:#f7f7f9}
+  .dir-item.active{background:var(--primary-bg);color:var(--text);font-weight:500}
+  .dir-item .di-arrow{color:var(--text-3);display:inline-flex;transition:transform .12s;width:9px;justify-content:center;flex:none}
+  .dir-item.open .di-arrow{transform:rotate(90deg)}
+  .dir-item .di-icon{color:var(--text-2);display:inline-flex;flex-shrink:0}
+  .dir-item.active .di-icon{color:var(--text)}
+  .dir-item:not(.dt-leaf) .di-icon{color:unset}
+  .dir-item .di-name{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .dir-item .di-cnt{
+    font-size:11px;color:var(--text-3);background:#fff;border:1px solid var(--border);
+    border-radius:9px;padding:0 7px;flex:none;
+  }
+  .dir-item.active .di-cnt{color:var(--text-3);border-color:var(--border)}
+  .dir-item .di-ops{display:none;align-items:center;gap:2px;margin-left:4px;flex-shrink:0}
+  .dir-item:hover .di-ops,.dir-item.active .di-ops{display:flex}
+  .dir-item:hover .di-cnt,.dir-item.active .di-cnt{display:none}
+  .di-ops button{
+    width:22px;height:22px;border:none;background:transparent;border-radius:4px;
+    color:#5b8def;display:flex;align-items:center;justify-content:center;padding:0;cursor:pointer;
+  }
+  .di-ops button:hover{background:rgba(82,82,255,.16)}
+  .di-ops button.danger{color:#f53f3f}
+  .di-ops button.danger:hover{background:#fdf0f1}
+  .dir-item .di-plus{
+    width:18px;height:18px;border-radius:4px;display:none;align-items:center;justify-content:center;
+    color:var(--text-3);font-size:13px;line-height:1;flex:none;border:none;background:none;padding:0;cursor:pointer;
+  }
+  .dir-item:hover .di-plus,.dir-item.active .di-plus{display:inline-flex}
+  .dir-item .di-plus:hover{background:var(--primary);color:#fff}
+  .dir-children{margin-left:22px;display:none}
+  .dir-children.open{display:block}
+  .dir-foot{
+    border-top:1px solid #f0f1f4;padding:10px 2px 2px;margin-top:6px;flex-shrink:0;
+    display:flex;flex-direction:column;gap:2px;background:#fff;
+  }
+  .dir-foot button{
+    display:flex;align-items:center;gap:8px;border:none;background:none;padding:8px 10px;border-radius:6px;
+    font-size:13px;color:var(--text);text-align:left;cursor:pointer;
+  }
+  .dir-foot button:hover{background:#f4f6f9;color:var(--primary)}
+  .dir-collapse{
+    position:absolute;top:50%;right:-13px;transform:translateY(-50%);z-index:30;
+    width:26px;height:26px;border-radius:50%;background:#fff;border:1px solid var(--border);
+    box-shadow:0 2px 8px rgba(15,23,42,.12);color:var(--text-3);
+    display:flex;align-items:center;justify-content:center;padding:0;cursor:pointer;
+  }
+  .dir-collapse:hover{color:var(--primary);border-color:var(--primary)}
+  .dir-collapse svg{transition:transform .2s}
+  .body-row.folded .dir-panel{
+    width:0;padding:0;border-color:transparent;overflow:visible;max-height:none;
+  }
+  .body-row.folded .dir-panel > *:not(.dir-collapse){display:none}
+  .body-row.folded .dir-collapse svg{transform:rotate(180deg)}
+  .dir-empty{padding:36px 12px;text-align:center;color:var(--text-3);font-size:13px}
+  .main{flex:1;min-width:0;display:flex;flex-direction:column;min-height:0}
+  .main-head{
+    display:flex;align-items:center;justify-content:space-between;padding:0 0 8px;font-size:13px;color:var(--text-2);flex-shrink:0;
+  }
+  .main-head b{color:var(--primary);font-weight:600}
+  .table-wrap{flex:1;overflow:auto;min-height:0}
+  table.md-table{width:max-content;min-width:100%;border-collapse:collapse;font-size:13px}
+  .md-table th{
+    position:sticky;top:0;background:#f7f8fa;color:var(--text-2);font-weight:500;text-align:left;
+    padding:10px 12px;border-bottom:1px solid var(--border);white-space:nowrap;z-index:1;
+  }
+  .md-table td{padding:12px;border-bottom:1px solid #f0f1f4;color:var(--text);white-space:nowrap}
+  .md-table tbody tr:hover{background:#f8faff}
+  .md-table .num{font-variant-numeric:tabular-nums}
+  .empty{
+    display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px;
+    padding:80px 20px;color:var(--text-3);font-size:13px;
+  }
+  .empty svg{opacity:.7}
+  .pager{
+    display:flex;align-items:center;justify-content:flex-end;gap:8px;padding:10px 16px;
+    border-top:1px solid #f0f1f4;font-size:12.5px;color:var(--text-2);flex-shrink:0;
+  }
+  .pager button{
+    min-width:28px;height:28px;padding:0 8px;border:1px solid var(--border);border-radius:4px;background:#fff;cursor:pointer;color:var(--text-2);
+  }
+  .pager button.on{background:var(--primary);border-color:var(--primary);color:#fff}
+  .pager button:disabled{opacity:.4;cursor:not-allowed}
+  .pager input{width:40px;height:28px;border:1px solid var(--border);border-radius:4px;text-align:center}
+
+  .toast{
+    position:fixed;left:50%;top:64px;transform:translateX(-50%) translateY(-8px);
+    background:#fff;color:var(--text);padding:11px 16px 11px 14px;border-radius:12px;font-size:13px;
+    opacity:0;pointer-events:none;transition:all .2s;z-index:2000;max-width:min(480px,92vw);
+    display:flex;align-items:center;gap:10px;box-shadow:0 10px 32px rgba(36,48,72,.14);border:1px solid #e8ebf2;
+  }
+  .toast.show{opacity:1;transform:translateX(-50%) translateY(0);pointer-events:auto}
+  .toast .t-ico{
+    width:28px;height:28px;border-radius:50%;display:grid;place-items:center;flex-shrink:0;font-size:14px;
+    background:#eaf0ff;color:var(--primary);
+  }
+  .toast.ok .t-ico{background:#e8f8ef;color:#12b76a}
+  .toast.warn .t-ico{background:#fff6e5;color:#f5a524}
+  .toast.err .t-ico{background:#fef0f1;color:#e34d59}
+  .toast .t-msg{line-height:1.45;font-weight:500}
+
+  .modal-mask{
+    position:fixed;inset:0;background:rgba(36,48,72,.28);display:none;align-items:center;justify-content:center;z-index:3000;padding:24px;
+    backdrop-filter:blur(2px);-webkit-backdrop-filter:blur(2px);pointer-events:none;
+  }
+  .modal-mask.show{display:flex;pointer-events:auto}
+  .modal{background:#fff;border-radius:14px;width:640px;max-width:100%;max-height:min(860px,92vh);display:flex;flex-direction:column;box-shadow:0 18px 48px rgba(36,48,72,.14),0 0 0 1px rgba(36,48,72,.04)}
+  .modal.lg{width:820px}
+  .modal-head{
+    display:flex;align-items:center;justify-content:space-between;gap:10px;padding:12px 18px;
+    border-bottom:1px solid #eef1f6;flex-shrink:0;
+    background:linear-gradient(180deg,#f7f9ff 0%,#ffffff 100%);
+  }
+  .mh-title{font-size:15px;font-weight:600;display:inline-flex;align-items:center;gap:10px;color:var(--text)}
+  .mh-ico{
+    width:30px;height:30px;border-radius:9px;display:grid;place-items:center;flex-shrink:0;
+    background:#eaf0ff;color:var(--primary);
+  }
+  .mh-ico.ok{background:#e8f8ef;color:#12b76a}
+  .mh-ico.warn{background:#fff6e5;color:#f5a524}
+  .mh-ico.danger{background:#fef0f1;color:#e34d59}
+  .mh-ico.info{background:var(--primary-bg);color:var(--primary)}
+  .mh-x{border:none;background:none;font-size:16px;color:var(--text-3);cursor:pointer;padding:4px 6px;border-radius:8px}
+  .mh-x:hover{background:#eef1f6;color:var(--text)}
+  .modal-body{padding:16px 18px;overflow:auto;flex:1;background:#fcfdff}
+  .modal-foot{display:flex;justify-content:flex-end;gap:10px;padding:12px 18px;border-top:1px solid #eef1f6;flex-shrink:0;background:#fff}
+  .fm-field{margin-bottom:14px}
+  .fm-field > label{display:block;font-size:12.5px;color:var(--text-2);margin-bottom:6px}
+  .fm-field .req{color:var(--danger);margin-right:3px}
+  .fm-field input,.fm-field select,.fm-field textarea{
+    width:100%;height:34px;padding:0 10px;border:1px solid var(--border);border-radius:6px;outline:none;font-size:13px;
+  }
+  .fm-field textarea{height:84px;padding:8px 10px;resize:vertical}
+  .fm-field input:focus,.fm-field select:focus,.fm-field textarea:focus{border-color:var(--primary);box-shadow:0 0 0 2px rgba(82,82,255,.16)}
+  /* 批量加入指标库 · 两步（对齐三源「目录绑定」） */
+  .bind-steps{display:flex;align-items:center;gap:10px;margin-bottom:16px}
+  .bind-step{display:inline-flex;align-items:center;gap:8px;font-size:13px;color:var(--text-3)}
+  .bind-step .bs-n{
+    width:22px;height:22px;border-radius:50%;border:1px solid #d5dae3;display:inline-flex;
+    align-items:center;justify-content:center;font-size:12px;font-weight:600;background:#fff;
+  }
+  .bind-step.on{color:var(--primary);font-weight:600}
+  .bind-step.on .bs-n{background:var(--primary);border-color:var(--primary);color:#fff}
+  .bind-step.done{color:var(--text-2)}
+  .bind-step.done .bs-n{background:#e8f0ff;border-color:var(--primary);color:var(--primary)}
+  .bind-step-line{flex:1;height:1px;background:#e6e8ee;max-width:48px}
+  .bind-pane{display:none}
+  .bind-pane.show{display:block}
+  .bind-edit-wrap{max-height:360px;overflow:auto;border:1px solid var(--border);border-radius:8px}
+  .bind-edit{width:100%;border-collapse:collapse;font-size:12.5px}
+  .bind-edit th{
+    position:sticky;top:0;background:#f7f8fa;color:var(--text-2);font-weight:500;
+    text-align:left;padding:10px;border-bottom:1px solid var(--border);white-space:nowrap;z-index:1;
+  }
+  .bind-edit td{padding:8px 10px;border-bottom:1px solid #f0f1f4;vertical-align:middle}
+  .bind-edit .be-id{color:var(--text-2);white-space:nowrap}
+  .bind-edit input[type="text"], .bind-edit select{
+    width:100%;height:32px;border:1px solid var(--border);border-radius:6px;
+    padding:0 10px;outline:none;background:#fff;font-size:12.5px;box-sizing:border-box;
+  }
+  .bind-edit input[type="text"]:focus, .bind-edit select:focus{border-color:var(--primary)}
+  .bind-edit .be-name{min-width:200px}
+  .bind-edit .be-unit{width:100px}
+  .bind-edit .be-freq{width:96px}
+  .bind-edit .be-dir{min-width:180px;max-width:240px;position:relative}
+  .be-mode{display:flex;align-items:center;gap:14px;font-size:12.5px;color:var(--text-2);font-weight:400}
+  /* 目录级联（对齐三源 Cascader；过长时限制弹层宽高） */
+  .cascader{position:relative;width:100%}
+  .cascader-trigger{
+    width:100%;height:32px;border:1px solid var(--border);border-radius:6px;
+    padding:0 28px 0 10px;background:#fff;display:flex;align-items:center;
+    font-size:12.5px;color:var(--text);cursor:pointer;text-align:left;position:relative;
+  }
+  .cascader-trigger:hover{border-color:#b8c0cc}
+  .cascader.open .cascader-trigger,
+  .cascader-trigger:focus{border-color:var(--primary);box-shadow:0 0 0 2px rgba(82,82,255,.16)}
+  .cascader-trigger .cc-ph{color:var(--text-3)}
+  .cascader-trigger .cc-arrow{
+    position:absolute;right:10px;top:50%;transform:translateY(-50%);
+    color:var(--text-3);display:flex;transition:transform .15s;
+  }
+  .cascader.open .cascader-trigger .cc-arrow{transform:translateY(-50%) rotate(180deg);color:var(--primary)}
+  .cascader-panel{
+    display:none;position:fixed;left:0;top:0;z-index:4200;
+    background:#fff;border:1px solid var(--border);border-radius:8px;
+    box-shadow:0 8px 24px rgba(15,23,42,.12);
+    max-width:min(480px,70vw);max-height:240px;overflow:auto;
+  }
+  .cascader.open .cascader-panel{display:flex;align-items:stretch}
+  .cascader-col{
+    min-width:112px;max-width:150px;width:132px;max-height:220px;
+    overflow-x:hidden;overflow-y:auto;border-right:1px solid #f0f1f4;padding:6px 0;flex:none;
+  }
+  .cascader-col:last-child{border-right:none}
+  .cascader-item{
+    display:flex;align-items:center;gap:6px;padding:7px 10px;font-size:12.5px;
+    color:var(--text);cursor:pointer;white-space:nowrap;
+  }
+  .cascader-item:hover{background:#f5f7fa}
+  .cascader-item.on{color:var(--primary);background:#f0f5ff;font-weight:500}
+  .cascader-item .ci-check{
+    width:14px;flex:none;color:var(--primary);visibility:hidden;display:inline-flex;
+  }
+  .cascader-item.picked .ci-check{visibility:visible}
+  .cascader-item .ci-label{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis}
+  .cascader-item .ci-next{width:12px;flex:none;color:var(--text-3);display:inline-flex}
+  .cascader-item.on .ci-next{color:var(--primary)}
+  #libMask .modal{overflow:visible}
+  #libPane2 .bind-edit-wrap{overflow:auto;max-height:min(420px,52vh)}
+  .be-mode label{display:inline-flex;align-items:center;gap:5px;cursor:pointer;white-space:nowrap}
+  .be-mode input{accent-color:var(--primary)}
+  .pick-bar{display:flex;align-items:center;gap:10px;margin:0 0 10px;flex-wrap:wrap}
+  .pick-bar select{
+    height:32px;border:1px solid var(--border);border-radius:6px;padding:0 10px;
+    outline:none;background:#fff;min-width:120px;font-size:12.5px;
+  }
+  .pick-bar select:focus{border-color:var(--primary)}
+  .pick-search{
+    display:flex;align-items:center;gap:6px;border:1px solid var(--border);border-radius:6px;
+    padding:0 10px;height:32px;background:#fff;width:200px;
+  }
+  .pick-search input{flex:1;border:none;outline:none;height:100%;min-width:0;font-size:12.5px}
+  .pick-search svg{color:var(--text-3);flex-shrink:0}
+  .pick-check{display:flex;align-items:center;gap:6px;font-size:12.5px;color:var(--text-2);cursor:pointer}
+  .pick-count{margin-left:auto;font-size:12.5px;color:var(--text-2)}
+  .pick-count b{color:var(--primary)}
+  .pick-table-wrap{max-height:280px;overflow:auto;border:1px solid var(--border);border-radius:8px}
+  .pick-table{width:100%;border-collapse:collapse;font-size:12.5px}
+  .pick-table th{
+    position:sticky;top:0;background:#f7f8fa;color:var(--text-2);font-weight:500;
+    text-align:left;padding:9px 10px;border-bottom:1px solid var(--border);white-space:nowrap;z-index:1;
+  }
+  .pick-table td{padding:8px 10px;border-bottom:1px solid #f0f1f4;color:var(--text);white-space:nowrap}
+  .pick-table tbody tr:hover{background:#f8faff}
+  .pick-table tbody tr.on{background:var(--primary-bg)}
+  .pick-table .pt-name{max-width:280px;overflow:hidden;text-overflow:ellipsis}
+  .pick-table .pt-num{text-align:right;font-variant-numeric:tabular-nums}
+
+  .tip{
+    margin-bottom:14px;padding:10px 12px;background:#f5f8ff;border:1px solid #dbe6ff;border-radius:8px;
+    font-size:12.5px;color:var(--text-2);line-height:1.55;
+  }
+  .tip b{color:var(--primary);font-weight:600}
+  .tpl-row{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:14px}
+  /* 导入弹窗 */
+  .modal.import-dlg{width:560px}
+  .modal.import-dlg .modal-head{
+    background:linear-gradient(180deg,#f7f9ff 0%,#ffffff 100%);border-bottom:1px solid #eef1f6;color:var(--text);
+  }
+  .modal.import-dlg .mh-title{display:inline-flex;align-items:center;gap:10px;color:var(--text)}
+  .modal.import-dlg .mh-x{color:var(--text-3)}
+  .modal.import-dlg .mh-x:hover{background:#eef1f6;color:var(--text)}
+  .imp-sec{margin-bottom:18px}
+  .imp-sec-title{font-size:14px;color:var(--text-2);margin-bottom:14px}
+  .imp-tpls{display:grid;grid-template-columns:1fr 1fr;gap:28px;justify-items:center}
+  .imp-tpl{display:flex;flex-direction:column;align-items:center;gap:10px}
+  .imp-tpl .btn.primary{min-width:118px;justify-content:center}
+  .imp-thumb{
+    width:148px;height:96px;border:1px solid #e3e6eb;border-radius:4px;overflow:hidden;background:#fff;
+    box-shadow:0 1px 3px rgba(15,23,42,.06);cursor:pointer;
+  }
+  .imp-thumb img{width:100%;height:100%;object-fit:cover;display:block}
+  .imp-view{border:none;background:none;color:var(--primary);font-size:13px;cursor:pointer;padding:0}
+  .imp-view:hover{text-decoration:underline}
+  .imp-divider{height:1px;background:#eef0f4;margin:4px 0 18px}
+  .imp-upload-btn{min-width:140px}
+  .imp-upload-wrap{display:flex;flex-direction:column;align-items:flex-start;gap:8px}
+  .imp-upload-hint{font-size:12.5px;color:var(--text-3);line-height:1.5}
+  .imp-steps{margin-top:4px;margin-bottom:4px;font-size:13px;color:var(--text-2);line-height:1.85}
+  .imp-steps a{color:var(--primary);cursor:pointer;text-decoration:none}
+  .imp-steps a:hover{text-decoration:underline}
+  .modal.import-preview-dlg{width:720px;max-width:96vw}
+  .preview-meta{
+    display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;
+    margin-bottom:12px;font-size:13px;color:var(--text-2);
+  }
+  .preview-meta b{color:var(--text);font-weight:600}
+  .preview-table-wrap{
+    max-height:360px;overflow:auto;border:1px solid var(--border);border-radius:8px;
+  }
+  .preview-table-wrap table{width:100%;border-collapse:collapse;font-size:12.5px}
+  .preview-table-wrap th,.preview-table-wrap td{border-bottom:1px solid #f0f1f4;padding:8px 10px;text-align:left;white-space:nowrap}
+  .preview-table-wrap th{
+    position:sticky;top:0;background:#f7f8fa;color:var(--text-2);font-weight:500;z-index:1;
+    border-bottom:1px solid var(--border);
+  }
+  .preview-table-wrap tbody tr:hover{background:#f8faff}
+  .result-box{display:none;margin-bottom:12px;padding:12px;border-radius:8px;background:#fff7f0;border:1px solid #ffe1c2;font-size:13px;color:#8a4b12;line-height:1.55}
+  .result-box.show{display:block}
+  .result-box.ok{background:#f0faf4;border-color:#c6ebd4;color:#146c43}
+  .lightbox{
+    position:fixed;inset:0;background:rgba(15,23,42,.62);display:none;align-items:center;justify-content:center;z-index:3100;padding:24px;
+  }
+  .lightbox.show{display:flex}
+  .lightbox img{max-width:min(920px,94vw);max-height:86vh;border-radius:8px;background:#fff;box-shadow:0 20px 50px rgba(0,0,0,.35)}
+  body.embed .sidebar,
+  body.embed .topbar{display:none !important}
+  body.embed .app{display:block;height:100%;min-height:100%;background:transparent}
+  body.embed .workspace{height:100%;min-height:100%}
+  body.embed .content{padding:0;height:100%;min-height:100%}
+  body.embed .panel{border:none;border-radius:0;height:100%;min-height:100%;background:transparent}
+  /* 嵌入时弹窗：父页全屏浅遮罩模糊，子页只露出弹窗 */
+  html.embed-modal-open,
+  body.embed.modal-open{background:transparent !important}
+  body.embed.modal-open .panel{background:transparent;border:none;box-shadow:none}
+  body.embed.modal-open .body-row,
+  body.embed.modal-open .toolbar,
+  body.embed.modal-open .main-head,
+  body.embed.modal-open .pager{visibility:hidden}
+  body.embed .modal-mask{
+    background:transparent;
+    backdrop-filter:none;
+    -webkit-backdrop-filter:none;
+  }
+  body.embed .modal-mask.show{background:transparent}
+  .result-box a{color:var(--primary);cursor:pointer}
+  .grid-form{display:grid;grid-template-columns:1fr 1.3fr 1fr .8fr .7fr .8fr auto;gap:8px;align-items:end}
+  .grid-form .fm-field{margin:0}
+  .grid-form .del{
+    height:34px;width:34px;border:1px solid var(--border);border-radius:6px;background:#fff;color:var(--text-3);cursor:pointer;
+  }
+  .grid-form .del:hover{color:var(--danger);border-color:#f3b0b6}
+  .add-link{margin-top:10px;border:none;background:none;color:var(--primary);font-size:13px;cursor:pointer}
+</style>
+</head>
+<body>
+<script src="icons.js"></script>
+<div class="app">
+  <aside class="sidebar">
+    <div class="logo">
+      <img class="brand-mark" src="assets/ailab-mark.png" alt="AILab" width="28" height="28">
+      <span class="name">AILab</span>
+      <span class="sub">AI指标工坊</span>
+    </div>
+    <nav class="menu">
+      <button class="menu-item" onclick="location.href='chart-gallery.html'"><span class="mi-icon">▦</span>图库</button>
+      <button class="menu-item" onclick="location.href='indicator-center.html'"><span class="mi-icon"><svg class="i" width="15" height="15" aria-hidden="true"><use href="#i-nav-indicator"></use></svg></span>指标中心</button>
+      <button class="menu-item active expanded" id="menuDs"><span class="mi-icon">▤</span>数据源<span class="mi-arrow">▾</span></button>
+      <div class="sub-menu open" id="subDs">
+        <button class="sub-item" onclick="location.href='data-source.html?src=上海钢联'"><span class="sd"></span>上海钢联</button>
+        <button class="sub-item" onclick="location.href='data-source.html?src=同花顺'"><span class="sd"></span>同花顺</button>
+        <button class="sub-item" onclick="location.href='data-source.html?src=SMM'"><span class="sd"></span>SMM</button>
+        <button class="sub-item on"><span class="sd"></span>手工录入数据</button>
+      </div>
+      <button class="menu-item"><span class="mi-icon">↗</span>预测指标</button>
+    </nav>
+    <div class="sidebar-foot">
+      <button type="button" class="sb-collapse" title="收起菜单"><svg class="i" width="16" height="16" aria-hidden="true"><use href="#i-panel-collapse"></use></svg></button>
+    </div>
+  </aside>
+
+  <div class="workspace">
+    <header class="topbar">
+      <div class="crumb"><b>数据源</b><span class="sep">/</span><span class="cur">手工录入数据</span></div>
+      <div class="topbar-right">
+        <button class="bell" title="通知">🔔</button>
+        <button class="user"><span class="avatar">文</span><span>吴开文</span></button>
+      </div>
+    </header>
+
+    <main class="content">
+      <div class="panel">
+        <div class="body-row">
+          <aside class="dir-panel" id="dirPanel">
+            <div class="dir-head">
+              <h2>目录</h2>
+              <label class="only-mine"><input type="checkbox" id="dirOnlyMine">只看我的</label>
+            </div>
+            <div class="dir-search">
+              <div class="ds-input">
+                <svg class="i" width="13" height="13" aria-hidden="true"><use href="#i-search"></use></svg>
+                <input id="catKw" placeholder="指标ID/指标名称" autocomplete="off">
+              </div>
+            </div>
+            <div class="dir-tree" id="dirTree"></div>
+            <div class="dir-foot">
+              <button type="button" id="btnAddDir">
+                <svg class="i" width="13" height="13" aria-hidden="true"><use href="#i-plus-14"></use></svg>
+                添加一级目录
+              </button>
+            </div>
+            <button type="button" class="dir-collapse" id="dirCollapse" title="收起 / 展开目录">
+              <svg class="i" width="12" height="12" aria-hidden="true"><use href="#i-chevrons-left"></use></svg>
+            </button>
+          </aside>
+          <div class="main">
+            <div class="toolbar">
+              <button class="btn primary" id="btnImport">导入数据</button>
+              <button class="btn primary" id="btnAddLib" title="勾选手工指标并确认目录后加入指标库（两步，对齐目录绑定）">批量加入指标库</button>
+              <button class="btn soft" id="btnBatchDel" disabled>批量删除</button>
+              <button class="link" id="btnExport" type="button">导出excel <span title="按当前筛选结果导出">ⓘ</span></button>
+            </div>
+            <div class="main-head"><span>共 <b id="indCount">0</b> 个指标</span></div>
+            <div class="table-wrap" id="tableWrap"></div>
+            <div class="pager" id="pager"></div>
+          </div>
+        </div>
+      </div>
+    </main>
+  </div>
+</div>
+
+<!-- 导入数据（按设计稿） -->
+<div class="modal-mask" id="importMask">
+  <div class="modal import-dlg">
+    <div class="modal-head">
+      <span class="mh-title">
+        <span class="mh-ico"><svg class="i" width="16" height="16" aria-hidden="true"><use href="#i-g-6541007a"></use></svg></span>
+        导入数据
+      </span>
+      <button class="mh-x" data-close="importMask">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="imp-sec">
+        <div class="imp-sec-title">导入数据</div>
+        <div class="imp-upload-wrap">
+          <button type="button" class="btn primary imp-upload-btn" id="btnDoImport">
+            <svg class="i" width="15" height="15" aria-hidden="true"><use href="#i-g-7189b4be"></use></svg>
+            导入数据
+          </button>
+          <div class="imp-upload-hint">上传已填写的 Excel 模板；解析成功后将打开独立预览弹窗确认入库。</div>
+        </div>
+        <input type="file" id="importFile" accept=".xlsx,.xls" hidden>
+      </div>
+      <div class="imp-steps">
+        <div>1.第一步，点击「导入数据」上传已填写模板；空数据模板不允许导入。</div>
+        <div>2.第二步，在预览弹窗核对数据后确认导入。</div>
+        <div>3.第三步，完成导入。若有失败数据，可下载 <a id="failListLink" href="assets/manual-data/失败列表.xlsx" download>导入失败列表</a>。</div>
+      </div>
+      <div class="imp-divider"></div>
+      <div class="imp-sec" style="margin-bottom:0">
+        <div class="imp-sec-title">下载导入模板</div>
+        <div class="imp-tpls">
+          <div class="imp-tpl">
+            <a class="btn primary" href="assets/manual-data/数据导入模板1.xlsx" download>
+              <svg class="i" width="14" height="14" aria-hidden="true"><use href="#i-download"></use></svg>
+              模板1
+            </a>
+            <div class="imp-thumb" data-preview="assets/manual-data/tpl1-preview.png" title="查看大图">
+              <img src="assets/manual-data/tpl1-preview.png" alt="模板1预览">
+            </div>
+            <button type="button" class="imp-view" data-preview="assets/manual-data/tpl1-preview.png">查看大图</button>
+          </div>
+          <div class="imp-tpl">
+            <a class="btn primary" href="assets/manual-data/数据导入模板2.xlsx" download>
+              <svg class="i" width="14" height="14" aria-hidden="true"><use href="#i-download"></use></svg>
+              模板2
+            </a>
+            <div class="imp-thumb" data-preview="assets/manual-data/tpl2-preview.png" title="查看大图">
+              <img src="assets/manual-data/tpl2-preview.png" alt="模板2预览">
+            </div>
+            <button type="button" class="imp-view" data-preview="assets/manual-data/tpl2-preview.png">查看大图</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- 导入预览（独立弹窗） -->
+<div class="modal-mask" id="importPreviewMask">
+  <div class="modal import-preview-dlg">
+    <div class="modal-head">
+      <span class="mh-title">
+        <span class="mh-ico ok"><svg class="i" width="16" height="16" aria-hidden="true"><use href="#i-g-d475bc53"></use></svg></span>
+        导入预览
+      </span>
+      <button class="mh-x" data-close="importPreviewMask" id="importPreviewX">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="result-box" id="importResult"></div>
+      <div class="preview-meta" id="importPreviewMeta">
+        <span>文件：<b id="importFileText">—</b> · 共 <b id="importCnt">0</b> 条 / <b id="importIndCnt">0</b> 个指标</span>
+      </div>
+      <div class="tip" id="importPreviewTip">请核对下方解析结果，确认无误后入库。空名称等无效行将记入失败列表。</div>
+      <div class="preview-table-wrap">
+        <table>
+          <thead><tr><th>品种</th><th>指标名称</th><th>指标日期</th><th>值</th><th>单位</th></tr></thead>
+          <tbody id="importTbody"></tbody>
+        </table>
+      </div>
+    </div>
+    <div class="modal-foot" id="importPreviewFoot">
+      <button class="btn" data-close="importPreviewMask" id="importPreviewCancel">取消</button>
+      <button class="btn primary" id="importOk" style="min-width:96px">确认导入</button>
+      <button class="btn primary" id="importPreviewDone" style="min-width:96px;display:none">完成</button>
+    </div>
+  </div>
+</div>
+
+<!-- 模板大图 -->
+<div class="lightbox" id="previewLight">
+  <button type="button" class="lb-x" id="previewLightClose">✕</button>
+  <img id="previewLightImg" alt="模板大图">
+</div>
+
+<!-- 手工录入 -->
+<div class="modal-mask" id="manualMask">
+  <div class="modal lg">
+    <div class="modal-head">
+      <span class="mh-title">
+        <span class="mh-ico"><svg class="i" width="16" height="16" aria-hidden="true"><use href="#i-copy"></use></svg></span>
+        手工录入数据
+      </span>
+      <button class="mh-x" data-close="manualMask">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="tip">字段均为必填；日期格式 <b>YYYY-MM-DD</b>；指标名称请填写全名。可一次录入多行。</div>
+      <div id="manualRows"></div>
+      <button type="button" class="add-link" id="manualAddRow">+ 添加一行</button>
+    </div>
+    <div class="modal-foot">
+      <button class="btn" data-close="manualMask">取消</button>
+      <button class="btn primary" id="manualOk">保存</button>
+    </div>
+  </div>
+</div>
+
+<!-- 批量加入指标库（两步，对齐三源目录绑定） -->
+<div class="modal-mask" id="libMask">
+  <div class="modal" style="width:1040px;max-width:96vw">
+    <div class="modal-head">
+      <span class="mh-title">
+        <span class="mh-ico"><svg class="i" width="16" height="16" aria-hidden="true"><use href="#i-unlink"></use></svg></span>
+        批量加入指标库
+      </span>
+      <button class="mh-x" data-close="libMask">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="tip">从手工录入指标中勾选，再确认名称 / 单位 / 频度，并绑定到目标目录后加入指标中心（与三源「目录绑定」交互一致）。</div>
+      <div class="bind-steps">
+        <div class="bind-step on" id="libStep1Label"><span class="bs-n">1</span>选择指标</div>
+        <div class="bind-step-line"></div>
+        <div class="bind-step" id="libStep2Label"><span class="bs-n">2</span>确认加入</div>
+      </div>
+      <div class="bind-pane show" id="libPane1">
+        <div class="pick-bar">
+          <select id="libPickCat" title="按目录筛选下方可选指标"><option value="">筛选目录</option></select>
+          <select id="libPickFreq" title="按频度筛选下方可选指标"><option value="">筛选频度</option><option value="日度">日度</option><option value="周度">周度</option><option value="月度">月度</option><option value="季度">季度</option><option value="年度">年度</option></select>
+          <div class="pick-search">
+            <svg class="i" width="13" height="13" aria-hidden="true"><use href="#i-search"></use></svg>
+            <input id="libPickKw" placeholder="指标ID/指标名称" autocomplete="off">
+          </div>
+          <label class="pick-check"><input type="checkbox" id="libPickAll">列表全选</label>
+          <span class="pick-count">已选: <b id="libPickCnt">0</b></span>
+        </div>
+        <div class="pick-table-wrap">
+          <table class="pick-table">
+            <thead>
+              <tr>
+                <th style="width:40px"></th>
+                <th style="width:120px">指标ID</th>
+                <th>指标名称</th>
+                <th style="width:110px">最新日期</th>
+                <th style="width:100px;text-align:right">最新值</th>
+                <th style="width:70px">频度</th>
+                <th style="width:80px">单位</th>
+              </tr>
+            </thead>
+            <tbody id="libPickTbody"></tbody>
+          </table>
+        </div>
+      </div>
+      <div class="bind-pane" id="libPane2">
+        <div class="bind-edit-wrap">
+          <table class="bind-edit">
+            <thead>
+              <tr>
+                <th style="width:120px">指标ID</th>
+                <th>指标名称</th>
+                <th style="width:110px">单位</th>
+                <th style="width:100px">频度</th>
+                <th style="width:220px">
+                  <div style="display:flex;flex-direction:column;gap:6px;align-items:flex-start">
+                    <span>指标目录</span>
+                    <div class="be-mode">
+                      <label><input type="radio" name="libDirMode" value="split" checked>分目录</label>
+                      <label><input type="radio" name="libDirMode" value="same">同目录</label>
+                    </div>
+                  </div>
+                </th>
+              </tr>
+            </thead>
+            <tbody id="libEditTbody"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+    <div class="modal-foot" id="libFoot" style="justify-content:center">
+      <button class="btn" id="libPrev" style="min-width:88px;display:none">上一步</button>
+      <button class="btn primary" id="libNext" style="min-width:88px">下一步</button>
+      <button class="btn" data-close="libMask" id="libCancel" style="min-width:88px">取消</button>
+    </div>
+  </div>
+</div>
+
+<!-- 添加目录 -->
+<div class="modal-mask" id="dirAddMask">
+  <div class="modal" style="width:420px">
+    <div class="modal-head">
+      <span class="mh-title">
+        <span class="mh-ico"><svg class="i" width="16" height="16" aria-hidden="true"><use href="#i-plus-16"></use></svg></span>
+        添加目录
+      </span><button class="mh-x" data-close="dirAddMask">✕</button></div>
+    <div class="modal-body">
+      <div class="fm-field"><label>上级目录</label><div id="daParent" style="font-size:13px;color:var(--text-2)">根目录（一级目录）</div></div>
+      <div class="fm-field"><label><i class="req">*</i>目录名称</label><input id="daName" placeholder="请输入目录名称"></div>
+    </div>
+    <div class="modal-foot">
+      <button class="btn" data-close="dirAddMask">取消</button>
+      <button class="btn primary" id="daOk">保存</button>
+    </div>
+  </div>
+</div>
+<!-- 编辑目录 -->
+<div class="modal-mask" id="dirEditMask">
+  <div class="modal" style="width:420px">
+    <div class="modal-head">
+      <span class="mh-title">
+        <span class="mh-ico"><svg class="i" width="16" height="16" aria-hidden="true"><use href="#i-edit-fill"></use></svg></span>
+        编辑目录
+      </span><button class="mh-x" data-close="dirEditMask">✕</button></div>
+    <div class="modal-body">
+      <div class="fm-field"><label><i class="req">*</i>目录名称</label><input id="deName"></div>
+      <div class="fm-field"><label>上级目录</label><select id="deParent"></select></div>
+    </div>
+    <div class="modal-foot">
+      <button class="btn" data-close="dirEditMask">取消</button>
+      <button class="btn primary" id="deOk">保存</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+var ME = "吴开文";
+var STATE = {
+  dir: "", /* 与指标中心一致：''=全部；一级名；一级/二级 */
+  kw: "",
+  onlyMine: false,
+  page: 1,
+  pageSize: 10,
+  selected: {},
+  pendingRows: [],
+  failRows: []
+};
+var ROWS = [
+  { id:"MD100001", name:"手工·社会融资规模增量", variety:"宏观", dir:"中国宏观/货币金融", unit:"亿元", freq:"月度", date:"2026-07-15", value:31200, creator:"吴开文" },
+  { id:"MD100002", name:"手工·CPI同比", variety:"宏观", dir:"中国宏观/价格指数", unit:"%", freq:"月度", date:"2026-07-10", value:0.6, creator:"吴开文" },
+  { id:"MD100003", name:"手工·螺纹钢现货价", variety:"黑色建材", dir:"黑色建材", unit:"元/吨", freq:"日度", date:"2026-08-08", value:3680, creator:"张敏" },
+  { id:"MD100004", name:"手工·沪铜主力结算价", variety:"有色金属", dir:"有色金属", unit:"元/吨", freq:"日度", date:"2026-08-08", value:78540, creator:"吴开文" },
+  { id:"MD100005", name:"手工·出口金额同比", variety:"宏观", dir:"中国宏观/外贸", unit:"%", freq:"月度", date:"2026-07-12", value:5.2, creator:"李华" }
+];
+/* 与指标中心保持一致的目录树 */
+var DIR_TREE = [
+  { name:"全部指标", all:true },
+  { name:"黑色建材" }, { name:"期权" }, { name:"能源化工" }, { name:"农产品" },
+  { name:"集运指数" },
+  { name:"中国宏观", children:["价格指数","外贸","货币金融"] },
+  { name:"贵金属" }, { name:"全球宏观" }, { name:"有色金属" }
+];
+var DIR_EDIT_CTX = null;
+var DIR_ADD_PARENT = "";
+
+function toastIcon(type){
+  if(type === "ok") return "✅";
+  if(type === "warn") return "⚠️";
+  if(type === "err") return "❌";
+  return "ℹ️";
+}
+function inferToastType(msg){
+  var s = String(msg || "");
+  if(/失败|错误|不能|无效|不存在|冲突/.test(s)) return "err";
+  if(/请先|请填写|请选择|请输入|最多|至少|同名/.test(s)) return "warn";
+  if(/成功|已保存|已添加|已删除|已更新|已解析|已导出|已下载|已加入|录入成功|导入成功/.test(s)) return "ok";
+  return "info";
+}
+function toast(msg, type){
+  var el = document.getElementById("toast");
+  type = type || inferToastType(msg);
+  el.className = "toast show " + type;
+  el.innerHTML = '<span class="t-ico" aria-hidden="true">' + toastIcon(type) + '</span><span class="t-msg"></span>';
+  el.querySelector(".t-msg").textContent = msg;
+  clearTimeout(toast._t);
+  toast._t = setTimeout(function(){ el.classList.remove("show"); }, 2400);
+}
+function pad2(n){ return n < 10 ? "0" + n : "" + n; }
+function uid(){
+  return "MD" + String(100000 + (ROWS.length + Math.floor(Math.random() * 900))).slice(0, 6);
+}
+function notifyParentModal(){
+  var open = !!document.querySelector(".modal-mask.show, .lightbox.show");
+  document.body.classList.toggle("modal-open", open);
+  document.documentElement.classList.toggle("embed-modal-open", open);
+  if(window.parent && window.parent !== window){
+    try{
+      window.parent.postMessage({ type: "manual-modal", open: open }, "*");
+    }catch(err){}
+  }
+}
+function openMask(id){
+  document.getElementById(id).classList.add("show");
+  notifyParentModal();
+}
+function closeMask(id){
+  document.getElementById(id).classList.remove("show");
+  notifyParentModal();
+}
+
+/* 品种 → 指标中心目录映射 */
+function mapVarietyToDir(variety){
+  var v = String(variety || "").trim();
+  if(!v) return "中国宏观";
+  if(v === "宏观" || v.indexOf("宏观") > -1) return "中国宏观";
+  var hit = DIR_TREE.find(function(d){
+    return !d.all && (d.name === v || (d.children && d.children.some(function(c){ return dirChildName(c) === v; })));
+  });
+  if(hit){
+    if(hit.name === v) return hit.name;
+    return hit.name + "/" + v;
+  }
+  /* 未知品种挂到同名一级（若不存在则后续仍可筛选显示） */
+  if(!DIR_TREE.some(function(d){ return d.name === v; })){
+    DIR_TREE.push({ name: v });
+  }
+  return v;
+}
+function indTopDir(ind){
+  return String(ind.dir || "").split("/")[0] || "";
+}
+function indSubDir(ind){
+  var p = String(ind.dir || "").split("/");
+  return p.length > 1 ? p[1] : "";
+}
+
+/* ---- xlsx 简易导出 ---- */
+function u16(n){ return new Uint8Array([n & 255, (n >> 8) & 255]); }
+function u32(n){ return new Uint8Array([n & 255, (n >> 8) & 255, (n >> 16) & 255, (n >> 24) & 255]); }
+function concatBytes(parts){
+  var len = 0; parts.forEach(function(p){ len += p.length; });
+  var out = new Uint8Array(len), o = 0;
+  parts.forEach(function(p){ out.set(p, o); o += p.length; });
+  return out;
+}
+function crc32(buf){
+  var table = crc32._t;
+  if(!table){
+    table = crc32._t = new Uint32Array(256);
+    for(var i = 0; i < 256; i++){
+      var c = i;
+      for(var k = 0; k < 8; k++) c = (c & 1) ? (0xEDB88320 ^ (c >>> 1)) : (c >>> 1);
+      table[i] = c >>> 0;
+    }
+  }
+  var crc = 0xFFFFFFFF;
+  for(var j = 0; j < buf.length; j++) crc = table[(crc ^ buf[j]) & 255] ^ (crc >>> 8);
+  return (crc ^ 0xFFFFFFFF) >>> 0;
+}
+function zipStore(files){
+  var enc = new TextEncoder();
+  var locals = [], centrals = [], offset = 0;
+  files.forEach(function(f){
+    var name = enc.encode(f.name);
+    var data = typeof f.data === "string" ? enc.encode(f.data) : f.data;
+    var crc = crc32(data);
+    var local = concatBytes([
+      u32(0x04034b50), u16(20), u16(0), u16(0), u16(0), u16(0),
+      u32(crc), u32(data.length), u32(data.length), u16(name.length), u16(0),
+      name, data
+    ]);
+    var central = concatBytes([
+      u32(0x02014b50), u16(20), u16(20), u16(0), u16(0), u16(0), u16(0),
+      u32(crc), u32(data.length), u32(data.length), u16(name.length), u16(0), u16(0),
+      u16(0), u16(0), u32(0), u32(offset), name
+    ]);
+    locals.push(local); centrals.push(central); offset += local.length;
+  });
+  var centralSize = centrals.reduce(function(s, p){ return s + p.length; }, 0);
+  var end = concatBytes([
+    u32(0x06054b50), u16(0), u16(0), u16(files.length), u16(files.length),
+    u32(centralSize), u32(offset), u16(0)
+  ]);
+  return concatBytes(locals.concat(centrals).concat([end]));
+}
+function xmlEscape(s){
+  return String(s == null ? "" : s)
+    .replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
+}
+function colName(n){
+  var s = "";
+  n += 1;
+  while(n > 0){ n--; s = String.fromCharCode(65 + (n % 26)) + s; n = Math.floor(n / 26); }
+  return s;
+}
+function gridToSheetXml(grid){
+  var rows = grid.map(function(row, ri){
+    var cells = row.map(function(v, ci){
+      var t = (v === "" || v == null) ? null : (/^-?\d+(\.\d+)?$/.test(String(v)) ? "n" : "inlineStr");
+      if(t == null) return '<c r="' + colName(ci) + (ri + 1) + '"/>';
+      if(t === "n") return '<c r="' + colName(ci) + (ri + 1) + '" t="n"><v>' + v + '</v></c>';
+      return '<c r="' + colName(ci) + (ri + 1) + '" t="inlineStr"><is><t>' + xmlEscape(v) + '</t></is></c>';
+    }).join("");
+    return '<row r="' + (ri + 1) + '">' + cells + '</row>';
+  }).join("");
+  return '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>'
+    + '<worksheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main">'
+    + '<sheetData>' + rows + '</sheetData></worksheet>';
+}
+function buildXlsxBlob(grid, sheetName){
+  var sheet = gridToSheetXml(grid);
+  var contentTypes = '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>'
+    + '<Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types">'
+    + '<Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/>'
+    + '<Default Extension="xml" ContentType="application/xml"/>'
+    + '<Override PartName="/xl/workbook.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet.main+xml"/>'
+    + '<Override PartName="/xl/worksheets/sheet1.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.worksheet+xml"/>'
+    + '</Types>';
+  var rels = '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>'
+    + '<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">'
+    + '<Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument" Target="xl/workbook.xml"/>'
+    + '</Relationships>';
+  var wb = '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>'
+    + '<workbook xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships">'
+    + '<sheets><sheet name="' + xmlEscape(sheetName || "Sheet1") + '" sheetId="1" r:id="rId1"/></sheets></workbook>';
+  var wbRels = '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>'
+    + '<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">'
+    + '<Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/worksheet" Target="worksheets/sheet1.xml"/>'
+    + '</Relationships>';
+  var bytes = zipStore([
+    { name: "[Content_Types].xml", data: contentTypes },
+    { name: "_rels/.rels", data: rels },
+    { name: "xl/workbook.xml", data: wb },
+    { name: "xl/_rels/workbook.xml.rels", data: wbRels },
+    { name: "xl/worksheets/sheet1.xml", data: sheet }
+  ]);
+  return new Blob([bytes], { type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" });
+}
+function downloadBlob(blob, name){
+  var a = document.createElement("a");
+  a.href = URL.createObjectURL(blob);
+  a.download = name;
+  document.body.appendChild(a);
+  a.click();
+  setTimeout(function(){ URL.revokeObjectURL(a.href); a.remove(); }, 800);
+}
+
+/* ---- 模板样例数据（与提供的 xlsx 一致） ---- */
+var DEMO_TPL1 = [
+  { variety: "宏观", name: "测试指标1", date: "2024-07-10", value: 51471, unit: "测试单位" },
+  { variety: "宏观", name: "测试指标1", date: "2024-07-11", value: 51472, unit: "测试单位" },
+  { variety: "宏观", name: "测试指标2", date: "2024-07-10", value: 1000, unit: "测试单位2" },
+  { variety: "宏观", name: "测试指标2", date: "2024-07-11", value: 1001, unit: "测试单位2" },
+  /* 故意放一条失败样例 */
+  { variety: "宏观", name: "", date: "2024-07-12", value: 1002, unit: "测试单位2", _bad: "指标名称不能为空" }
+];
+var DEMO_TPL2 = [
+  { variety: "宏观", name: "测试指标1", date: "2024-07-10", value: 51471, unit: "测试单位" },
+  { variety: "宏观", name: "测试指标1", date: "2024-07-09", value: 51441, unit: "测试单位" },
+  { variety: "宏观", name: "测试指标2", date: "2024-07-10", value: 1000, unit: "测试单位2" },
+  { variety: "宏观", name: "测试指标2", date: "2024-07-09", value: 1001, unit: "测试单位2" }
+];
+
+function validateRow(r){
+  if(!r.dir && !r.variety) return "所属目录/品种不能为空";
+  if(!r.name) return "指标名称不能为空";
+  if(!r.date) return "指标日期不能为空";
+  if(!/^\d{4}-\d{2}-\d{2}$/.test(r.date)) return "日期格式须为 YYYY-MM-DD";
+  if(r.value === "" || r.value == null || isNaN(Number(r.value))) return "值不能为空且须为数字";
+  if(!r.unit) return "单位不能为空";
+  return "";
+}
+
+function aggregateIndicators(rows){
+  var map = {};
+  rows.forEach(function(r){
+    var key = r.name;
+    if(!map[key]){
+      map[key] = {
+        id: r.id || uid(),
+        name: r.name,
+        variety: r.variety,
+        dir: r.dir || mapVarietyToDir(r.variety),
+        unit: r.unit,
+        freq: r.freq || "日度",
+        creator: r.creator || ME,
+        latestDate: r.date,
+        latestVal: r.value,
+        points: []
+      };
+    }
+    var ind = map[key];
+    if(r.dir) ind.dir = r.dir;
+    if(r.freq) ind.freq = r.freq;
+    ind.points.push({ date: r.date, value: Number(r.value) });
+    if(r.date >= ind.latestDate){
+      ind.latestDate = r.date;
+      ind.latestVal = Number(r.value);
+    }
+    if(!ind.id && r.id) ind.id = r.id;
+  });
+  return Object.keys(map).map(function(k){ return map[k]; });
+}
+
+function dirPathMatch(indDir, path){
+  if(!path) return true;
+  indDir = String(indDir || "");
+  return indDir === path || indDir.indexOf(path + "/") === 0;
+}
+function filteredIndicators(){
+  var inds = aggregateIndicators(ROWS);
+  return inds.filter(function(x){
+    if(!dirPathMatch(x.dir || "", STATE.dir || "")) return false;
+    if(STATE.onlyMine && x.creator !== ME) return false;
+    var kw = STATE.kw.trim().toLowerCase();
+    if(kw && (x.id + " " + x.name).toLowerCase().indexOf(kw) < 0) return false;
+    return true;
+  });
+}
+
+function dirCntOf(path){
+  var inds = aggregateIndicators(ROWS);
+  if(!path) return inds.length;
+  return inds.filter(function(x){ return dirPathMatch(x.dir || "", path); }).length;
+}
+function dirChildName(c){ return typeof c === "string" ? c : c.name; }
+function dirChildKids(c){ return c && typeof c === "object" ? (c.children || null) : null; }
+function dirNormChild(arr, idx){
+  if(typeof arr[idx] === "string") arr[idx] = { name: arr[idx], children: [] };
+  if(!arr[idx].children) arr[idx].children = [];
+  return arr[idx];
+}
+function dirLocate(path){
+  if(!path) return null;
+  var parts = path.split("/");
+  var topIdx = DIR_TREE.findIndex(function(d){ return !d.all && d.name === parts[0]; });
+  if(topIdx < 0) return null;
+  if(parts.length === 1) return { node: DIR_TREE[topIdx], container: DIR_TREE, index: topIdx };
+  var container = DIR_TREE[topIdx].children;
+  if(!container) return null;
+  var node = null, index = -1;
+  for(var i = 1; i < parts.length; i++){
+    index = -1;
+    for(var j = 0; j < container.length; j++){
+      if(dirChildName(container[j]) === parts[i]){ index = j; node = container[j]; break; }
+    }
+    if(index < 0) return null;
+    if(i < parts.length - 1){
+      dirNormChild(container, index);
+      container = container[index].children;
+    }
+  }
+  return { node: node, container: container, index: index };
+}
+function dirAddUnder(parentPath, name){
+  if(!parentPath){
+    if(DIR_TREE.some(function(d){ return d.name === name; })) return { ok:false, msg:"已存在同名一级目录" };
+    DIR_TREE.push({ name: name });
+    return { ok:true, path: name };
+  }
+  var parts = parentPath.split("/");
+  var top = DIR_TREE.find(function(d){ return !d.all && d.name === parts[0]; });
+  if(!top) return { ok:false, msg:"上级目录不存在" };
+  if(!top.children) top.children = [];
+  var container = top.children;
+  for(var i = 1; i < parts.length; i++){
+    var idx = -1;
+    for(var j = 0; j < container.length; j++){
+      if(dirChildName(container[j]) === parts[i]){ idx = j; break; }
+    }
+    if(idx < 0) return { ok:false, msg:"上级目录不存在" };
+    dirNormChild(container, idx);
+    container = container[idx].children;
+  }
+  if(container.some(function(c){ return dirChildName(c) === name; })){
+    return { ok:false, msg:"该目录下已存在同名子目录" };
+  }
+  container.push(name);
+  return { ok:true, path: parentPath + "/" + name };
+}
+function dirOpsHTML(path){
+  if(!path) return "";
+  /* icon 与数据源目录一致 */
+  var IC_EDIT = '<svg class="i" width="14" height="14" aria-hidden="true"><use href="#i-edit"></use></svg>';
+  var IC_DEL  = '<svg class="i" width="14" height="14" aria-hidden="true"><use href="#i-trash"></use></svg>';
+  return '<button type="button" class="di-plus di-add" data-path="' + path + '" title="添加子目录">＋</button>'
+    + '<span class="di-ops">'
+    + '<button type="button" class="di-edit" data-path="' + path + '" title="编辑">' + IC_EDIT + '</button>'
+    + '<button type="button" class="di-del danger" data-path="' + path + '" title="删除">' + IC_DEL + '</button>'
+    + '</span>';
+}
+function selectedDirParent(){
+  /* 选中谁就在谁下面加子目录；未选中则添加一级 */
+  return STATE.dir || "";
+}
+function syncAddDirBtn(){
+  var btn = document.getElementById("btnAddDir");
+  if(!btn) return;
+  btn.textContent = selectedDirParent() ? "＋ 添加子目录" : "＋ 添加一级目录";
+}
+function dirArrowHTML(hasChild){
+  return hasChild
+    ? '<svg class="i" width="9" height="9" aria-hidden="true"><use href="#i-chevron-right"></use></svg>'
+    : '<span style="display:inline-block;width:9px"></span>';
+}
+function dirIconHTML(size, open){
+  size = size || 14;
+  return '<svg class="i" width="' + size + '" height="' + size + '" aria-hidden="true"><use href="#' + (open ? "i-folder-open" : "i-folder") + '"></use></svg>';
+}
+function renderDirChildren(children, parentPath){
+  if(!children || !children.length) return "";
+  var html = '<div class="dir-children open">';
+  children.forEach(function(c){
+    var name = dirChildName(c);
+    var cp = parentPath + "/" + name;
+    var kids = dirChildKids(c);
+    var hasChild = !!(kids && kids.length);
+    var active = STATE.dir === cp ? " active" : "";
+    html += '<div class="dir-item' + (hasChild ? " open" : "") + active + '" data-path="' + cp + '">'
+      + '<span class="di-arrow">' + dirArrowHTML(hasChild) + '</span>'
+      + '<span class="di-icon">' + dirIconHTML(13, hasChild) + '</span>'
+      + '<span class="di-name">' + name + '</span>'
+      + dirOpsHTML(cp)
+      + '<span class="di-cnt">' + dirCntOf(cp) + '</span>'
+      + '</div>';
+    if(hasChild) html += renderDirChildren(kids, cp);
+  });
+  html += '</div>';
+  return html;
+}
+function renderDir(){
+  var html = "";
+  DIR_TREE.forEach(function(d){
+    var hasChild = d.children && d.children.length;
+    var path = d.all ? "" : d.name;
+    var active = STATE.dir === path ? " active" : "";
+    html += '<div class="dir-item' + (hasChild ? " open" : "") + active + '" data-path="' + path + '">'
+      + '<span class="di-arrow">' + dirArrowHTML(!!hasChild && !d.all) + '</span>'
+      + '<span class="di-icon">' + dirIconHTML(14, hasChild) + '</span>'
+      + '<span class="di-name">' + d.name + '</span>'
+      + dirOpsHTML(path)
+      + '<span class="di-cnt">' + dirCntOf(path) + '</span>'
+      + '</div>';
+    if(hasChild) html += renderDirChildren(d.children, d.name);
+  });
+  document.getElementById("dirTree").innerHTML = html || '<div class="dir-empty">暂无目录</div>';
+  syncAddDirBtn();
+}
+
+function renderTable(){
+  var list = filteredIndicators();
+  document.getElementById("indCount").textContent = String(list.length);
+  var wrap = document.getElementById("tableWrap");
+  if(!list.length){
+    wrap.innerHTML = '<div class="empty">'
+      + '<svg width="120" height="90" viewBox="0 0 120 90" fill="none">'
+      + '<ellipse cx="60" cy="78" rx="34" ry="6" fill="#eef0f4"/>'
+      + '<rect x="34" y="28" width="52" height="40" rx="6" fill="#e8ebf0" stroke="#d5dae3"/>'
+      + '<path d="M44 40h32M44 50h20" stroke="#c5ccd8" stroke-width="3" stroke-linecap="round"/>'
+      + '<circle cx="86" cy="24" r="10" fill="#dbe7ff" stroke="#9db7ff"/>'
+      + '<path d="M86 20v5M83.5 26.5h5" stroke="#2f6bff" stroke-width="1.6" stroke-linecap="round"/>'
+      + '</svg>'
+      + '<div>暂无数据</div></div>';
+    renderPager(0);
+    syncBatchDel();
+    return;
+  }
+  var pages = Math.max(1, Math.ceil(list.length / STATE.pageSize));
+  if(STATE.page > pages) STATE.page = pages;
+  var start = (STATE.page - 1) * STATE.pageSize;
+  var pageList = list.slice(start, start + STATE.pageSize);
+  var allChecked = pageList.length && pageList.every(function(x){ return STATE.selected[x.id]; });
+  wrap.innerHTML = '<table class="md-table"><thead><tr>'
+    + '<th style="width:42px"><input type="checkbox" id="chkAll"' + (allChecked ? " checked" : "") + '></th>'
+    + '<th>指标ID</th><th>指标名称</th><th>所属目录</th><th>单位</th><th>创建人</th>'
+    + '<th>最新日期 ↕</th><th>最新值</th>'
+    + '</tr></thead><tbody>'
+    + pageList.map(function(x){
+      return '<tr data-id="' + x.id + '">'
+        + '<td><input type="checkbox" class="row-chk" data-id="' + x.id + '"' + (STATE.selected[x.id] ? " checked" : "") + '></td>'
+        + '<td>' + x.id + '</td>'
+        + '<td title="' + x.name.replace(/"/g,"&quot;") + '">' + x.name + '</td>'
+        + '<td>' + (x.dir || "—") + '</td>'
+        + '<td>' + x.unit + '</td>'
+        + '<td>' + x.creator + '</td>'
+        + '<td>' + x.latestDate + '</td>'
+        + '<td class="num">' + x.latestVal + '</td>'
+        + '</tr>';
+    }).join("")
+    + '</tbody></table>';
+  renderPager(list.length);
+  syncBatchDel();
+}
+
+function renderPager(total){
+  var pages = Math.max(1, Math.ceil(total / STATE.pageSize));
+  var html = '<span>共' + total + '条</span>';
+  html += '<button ' + (STATE.page <= 1 ? "disabled" : "") + ' data-p="' + (STATE.page - 1) + '">‹</button>';
+  for(var i = 1; i <= pages && i <= 5; i++){
+    html += '<button class="' + (i === STATE.page ? "on" : "") + '" data-p="' + i + '">' + i + '</button>';
+  }
+  html += '<button ' + (STATE.page >= pages ? "disabled" : "") + ' data-p="' + (STATE.page + 1) + '">›</button>';
+  html += '<span>前往</span><input id="pageJump" value="' + STATE.page + '"><span>页</span>';
+  document.getElementById("pager").innerHTML = html;
+}
+
+function syncBatchDel(){
+  var n = Object.keys(STATE.selected).filter(function(k){ return STATE.selected[k]; }).length;
+  document.getElementById("btnBatchDel").disabled = n === 0;
+}
+
+function refresh(){
+  renderDir();
+  renderTable();
+}
+
+function upsertRows(rawList, opts){
+  opts = opts || {};
+  var ok = [], fail = [];
+  rawList.forEach(function(r){
+    var note = r._bad || validateRow(r);
+    if(note){
+      fail.push({
+        variety: r.variety || "", name: r.name || "", date: r.date || "",
+        value: r.value == null ? "" : r.value, unit: r.unit || "", note: note
+      });
+      return;
+    }
+    var dir = r.dir || mapVarietyToDir(r.variety);
+    ok.push({
+      variety: r.variety, name: r.name, date: r.date,
+      value: Number(r.value), unit: r.unit,
+      creator: r.creator || ME, id: null, dir: dir
+    });
+  });
+  var nameId = {}, nameDir = {};
+  aggregateIndicators(ROWS).forEach(function(x){ nameId[x.name] = x.id; nameDir[x.name] = x.dir; });
+  ok.forEach(function(r){
+    if(!nameId[r.name]) nameId[r.name] = uid();
+    r.id = nameId[r.name];
+    if(nameDir[r.name]) r.dir = nameDir[r.name];
+    else nameDir[r.name] = r.dir;
+    ROWS.push(r);
+  });
+  STATE.failRows = fail;
+  if(!opts.silent){
+    STATE.page = 1;
+    refresh();
+  }
+  return { ok: ok.length, fail: fail.length, failRows: fail };
+}
+
+/* ---- 导入（上传在导入弹窗；解析成功后打开独立预览弹窗） ---- */
+function resetImportPreviewUI(){
+  STATE.pendingRows = [];
+  document.getElementById("importFileText").textContent = "—";
+  document.getElementById("importCnt").textContent = "0";
+  document.getElementById("importIndCnt").textContent = "0";
+  document.getElementById("importTbody").innerHTML = "";
+  document.getElementById("importResult").className = "result-box";
+  document.getElementById("importResult").innerHTML = "";
+  document.getElementById("importPreviewMeta").style.display = "";
+  document.getElementById("importPreviewTip").style.display = "";
+  document.getElementById("importOk").style.display = "";
+  document.getElementById("importOk").disabled = false;
+  document.getElementById("importPreviewCancel").style.display = "";
+  document.getElementById("importPreviewDone").style.display = "none";
+}
+function setImportPreview(rows){
+  STATE.pendingRows = rows || [];
+  var names = {};
+  STATE.pendingRows.forEach(function(r){ if(r.name) names[r.name] = 1; });
+  document.getElementById("importCnt").textContent = String(STATE.pendingRows.length);
+  document.getElementById("importIndCnt").textContent = String(Object.keys(names).length);
+  document.getElementById("importTbody").innerHTML = STATE.pendingRows.map(function(r){
+    return "<tr>"
+      + "<td>" + (r.variety || "") + "</td>"
+      + "<td>" + (r.name || "<span style='color:#e34d59'>（空）</span>") + "</td>"
+      + "<td>" + (r.date || "") + "</td>"
+      + "<td>" + (r.value == null ? "" : r.value) + "</td>"
+      + "<td>" + (r.unit || "") + "</td></tr>";
+  }).join("");
+  document.getElementById("importOk").disabled = !STATE.pendingRows.length;
+}
+function openImportPreviewModal(fileName, rows){
+  resetImportPreviewUI();
+  document.getElementById("importFileText").textContent = fileName || "—";
+  setImportPreview(rows);
+  closeMask("importMask");
+  openMask("importPreviewMask");
+}
+function loadImportDemo(fileName){
+  var name = fileName || "数据导入模板1.xlsx";
+  var isTpl2 = /模板2|template\s*2/i.test(name);
+  var rows = (isTpl2 ? DEMO_TPL2 : DEMO_TPL1).map(function(r){ return Object.assign({}, r); });
+  if(!rows.length){
+    toast("空数据模板不允许导入");
+    return;
+  }
+  openImportPreviewModal(name, rows);
+  toast("解析成功 " + rows.length + " 行，请确认预览");
+}
+function downloadFailList(rows){
+  var grid = [["品种/Variety","指标名称/Indicator Name","指标日期/Indicator Date","值/Value","单位/Unit","备注/Note"]];
+  (rows || []).forEach(function(r){
+    grid.push([r.variety, r.name, r.date, r.value, r.unit, r.note || ""]);
+  });
+  downloadBlob(buildXlsxBlob(grid, "导入失败数据"), "失败列表.xlsx");
+}
+function openPreviewLight(src){
+  document.getElementById("previewLightImg").src = src;
+  document.getElementById("previewLight").classList.add("show");
+  notifyParentModal();
+}
+function closePreviewLight(){
+  document.getElementById("previewLight").classList.remove("show");
+  notifyParentModal();
+}
+
+document.getElementById("btnImport").addEventListener("click", function(){
+  resetImportPreviewUI();
+  openMask("importMask");
+});
+document.getElementById("btnDoImport").addEventListener("click", function(){
+  document.getElementById("importFile").click();
+});
+document.getElementById("importFile").addEventListener("change", function(e){
+  var f = e.target.files && e.target.files[0];
+  loadImportDemo(f ? f.name : "数据导入模板1.xlsx");
+  e.target.value = "";
+});
+document.querySelectorAll("#importMask [data-preview]").forEach(function(el){
+  el.addEventListener("click", function(e){
+    e.preventDefault();
+    openPreviewLight(el.getAttribute("data-preview"));
+  });
+});
+document.getElementById("previewLightClose").addEventListener("click", closePreviewLight);
+document.getElementById("previewLight").addEventListener("click", function(e){
+  if(e.target === this) closePreviewLight();
+});
+document.getElementById("failListLink").addEventListener("click", function(e){
+  if(STATE.failRows && STATE.failRows.length){
+    e.preventDefault();
+    downloadFailList(STATE.failRows);
+  }
+});
+document.getElementById("importPreviewDone").addEventListener("click", function(){
+  STATE.pendingRows = [];
+  closeMask("importPreviewMask");
+});
+document.getElementById("importOk").addEventListener("click", function(){
+  if(!STATE.pendingRows.length){ toast("请先上传文件"); return; }
+  var result = upsertRows(STATE.pendingRows);
+  STATE.pendingRows = [];
+  document.getElementById("importOk").style.display = "none";
+  document.getElementById("importPreviewCancel").style.display = "none";
+  document.getElementById("importPreviewDone").style.display = "";
+  document.getElementById("importPreviewTip").style.display = "none";
+  var box = document.getElementById("importResult");
+  if(result.fail){
+    box.className = "result-box show";
+    box.innerHTML = "成功导入 <b>" + result.ok + "</b> 条，失败 <b>" + result.fail + "</b> 条。"
+      + ' <a id="dlFail">下载失败列表</a>';
+    document.getElementById("dlFail").onclick = function(){ downloadFailList(result.failRows); };
+    toast("部分导入成功，可下载失败列表");
+  }else{
+    box.className = "result-box ok show";
+    box.innerHTML = "全部导入成功，共 <b>" + result.ok + "</b> 条数据。";
+    toast("导入成功 " + result.ok + " 条");
+  }
+});
+document.getElementById("menuDs").addEventListener("click", function(){
+  this.classList.toggle("expanded");
+  document.getElementById("subDs").classList.toggle("open");
+});
+
+/* ---- 手工录入弹窗 ---- */
+function flattenDirOptions(children, parentPath, selected, out){
+  if(!children) return;
+  children.forEach(function(c){
+    var name = dirChildName(c);
+    var p = parentPath + "/" + name;
+    out.push('<option value="' + p + '"' + (selected === p ? " selected" : "") + ">" + p + "</option>");
+    flattenDirOptions(dirChildKids(c), p, selected, out);
+  });
+}
+function manualRowHtml(row){
+  row = row || { variety:"", name:"", date:"", value:"", unit:"", dir:"" };
+  var dirOpts = DIR_TREE.filter(function(d){ return !d.all; }).map(function(d){
+    var parts = ['<option value="' + d.name + '"' + (row.dir === d.name ? " selected" : "") + ">" + d.name + "</option>"];
+    flattenDirOptions(d.children, d.name, row.dir, parts);
+    return parts.join("");
+  }).join("");
+  return '<div class="grid-form manual-row" style="grid-template-columns:1fr 1.2fr 1.1fr 1fr .7fr .8fr auto">'
+    + '<div class="fm-field"><label><i class="req">*</i>所属目录</label><select class="f-dir">' + dirOpts + '</select></div>'
+    + '<div class="fm-field"><label><i class="req">*</i>指标名称</label><input class="f-name" value="' + (row.name || "") + '" placeholder="全名"></div>'
+    + '<div class="fm-field"><label>品种</label><input class="f-variety" value="' + (row.variety || "") + '" placeholder="可选"></div>'
+    + '<div class="fm-field"><label><i class="req">*</i>指标日期</label><input class="f-date" type="date" value="' + (row.date || "") + '"></div>'
+    + '<div class="fm-field"><label><i class="req">*</i>值</label><input class="f-value" value="' + (row.value === 0 || row.value ? row.value : "") + '" placeholder="数值"></div>'
+    + '<div class="fm-field"><label><i class="req">*</i>单位</label><input class="f-unit" value="' + (row.unit || "") + '" placeholder="单位"></div>'
+    + '<button type="button" class="del" title="删除">✕</button>'
+    + '</div>';
+}
+function collectManualRows(){
+  return Array.prototype.map.call(document.querySelectorAll("#manualRows .manual-row"), function(el){
+    return {
+      dir: el.querySelector(".f-dir").value,
+      variety: el.querySelector(".f-variety").value.trim() || el.querySelector(".f-dir").value.split("/")[0],
+      name: el.querySelector(".f-name").value.trim(),
+      date: el.querySelector(".f-date").value.trim(),
+      value: el.querySelector(".f-value").value.trim(),
+      unit: el.querySelector(".f-unit").value.trim()
+    };
+  });
+}
+document.getElementById("manualAddRow").addEventListener("click", function(){
+  document.getElementById("manualRows").insertAdjacentHTML("beforeend", manualRowHtml({ dir: STATE.dir || "中国宏观" }));
+});
+document.getElementById("manualRows").addEventListener("click", function(e){
+  var btn = e.target.closest(".del");
+  if(!btn) return;
+  var rows = document.querySelectorAll("#manualRows .manual-row");
+  if(rows.length <= 1){ toast("至少保留一行"); return; }
+  btn.closest(".manual-row").remove();
+});
+document.getElementById("manualOk").addEventListener("click", function(){
+  var list = collectManualRows().filter(function(r){
+    return r.variety || r.name || r.date || r.value || r.unit || r.dir;
+  });
+  if(!list.length){ toast("请至少填写一行数据"); return; }
+  var result = upsertRows(list);
+  if(result.fail){
+    toast("保存成功 " + result.ok + " 条，失败 " + result.fail + " 条");
+    downloadFailList(result.failRows);
+  }else{
+    toast("录入成功 " + result.ok + " 条");
+  }
+  if(result.ok) closeMask("manualMask");
+});
+
+/* ---- 批量加入指标库（两步，对齐三源目录绑定） ---- */
+var LIB_ADDED = {}; /* 已加入指标中心的 ID */
+var LIB_SEL = {};
+var LIB_EDIT = [];
+var LIB_STEP = 1;
+var LIB_DIR_MODE = "split";
+var LIB_FREQ_OPTS = ["日度", "周度", "月度", "季度", "年度"];
+
+function flattenDirs(){
+  var out = [];
+  function walk(children, parentPath){
+    (children || []).forEach(function(c){
+      var p = parentPath + "/" + dirChildName(c);
+      var kids = dirChildKids(c);
+      if(kids && kids.length) walk(kids, p);
+      else out.push(p);
+    });
+  }
+  DIR_TREE.forEach(function(d){
+    if(d.all) return;
+    if(d.children && d.children.length) walk(d.children, d.name);
+    else out.push(d.name);
+  });
+  return out;
+}
+function buildLibCascaderNodes(){
+  function fromKids(children, parentPath){
+    return (children || []).map(function(c){
+      var name = dirChildName(c);
+      var path = parentPath ? parentPath + "/" + name : name;
+      var kids = dirChildKids(c);
+      return {
+        label: name,
+        value: path,
+        children: (kids && kids.length) ? fromKids(kids, path) : null
+      };
+    });
+  }
+  return DIR_TREE.filter(function(d){ return !d.all; }).map(function(d){
+    return {
+      label: d.name,
+      value: d.name,
+      children: (d.children && d.children.length) ? fromKids(d.children, d.name) : null
+    };
+  });
+}
+function findLibCascaderPath(nodes, target, trail){
+  trail = trail || [];
+  for(var i = 0; i < (nodes || []).length; i++){
+    var n = nodes[i];
+    var next = trail.concat([n.value]);
+    if(n.value === target) return next;
+    if(n.children){
+      var hit = findLibCascaderPath(n.children, target, next);
+      if(hit) return hit;
+    }
+  }
+  return null;
+}
+function libCascaderLabels(nodes, pathVals){
+  var labels = [];
+  var list = nodes;
+  (pathVals || []).forEach(function(v){
+    var node = null;
+    (list || []).forEach(function(n){ if(n.value === v) node = n; });
+    if(!node) return;
+    labels.push(node.label);
+    list = node.children;
+  });
+  return labels;
+}
+function placeLibCascaderPanel(cc){
+  if(!cc) return;
+  var panel = cc.querySelector(".cascader-panel");
+  var trigger = cc.querySelector(".cascader-trigger");
+  if(!panel || !trigger) return;
+  var r = trigger.getBoundingClientRect();
+  var maxW = Math.min(480, window.innerWidth * 0.7);
+  var left = r.left;
+  if(left + Math.min(maxW, 280) > window.innerWidth - 8){
+    left = Math.max(8, window.innerWidth - maxW - 8);
+  }
+  var top = r.bottom + 4;
+  var estH = Math.min(240, window.innerHeight * 0.4);
+  if(top + estH > window.innerHeight - 8){
+    top = Math.max(8, r.top - 4 - estH);
+  }
+  panel.style.left = Math.round(left) + "px";
+  panel.style.top = Math.round(top) + "px";
+}
+function fillLibCatOptions(){
+  var sel = document.getElementById("libPickCat");
+  var cur = sel.value;
+  var tops = DIR_TREE.filter(function(d){ return !d.all; }).map(function(d){ return d.name; });
+  sel.innerHTML = '<option value="">筛选目录</option>' + tops.map(function(n){
+    return '<option value="' + n + '"' + (n === cur ? " selected" : "") + ">" + n + "</option>";
+  }).join("");
+}
+function pickSelectedLibIds(){
+  return Object.keys(LIB_SEL).filter(function(id){ return LIB_SEL[id]; });
+}
+function libPool(){
+  return aggregateIndicators(ROWS).filter(function(x){ return !LIB_ADDED[x.id]; });
+}
+function filteredLibPickList(){
+  var cat = document.getElementById("libPickCat").value;
+  var freq = document.getElementById("libPickFreq").value;
+  var kw = (document.getElementById("libPickKw").value || "").trim().toLowerCase();
+  return libPool().filter(function(p){
+    var dir = p.dir || "";
+    if(cat && dir !== cat && dir.indexOf(cat + "/") !== 0) return false;
+    if(freq && (p.freq || "日度") !== freq) return false;
+    if(kw && (p.id + " " + p.name).toLowerCase().indexOf(kw) < 0) return false;
+    return true;
+  });
+}
+function updateLibPickCnt(){
+  document.getElementById("libPickCnt").textContent = String(pickSelectedLibIds().length);
+}
+function renderLibPickTable(){
+  var list = filteredLibPickList();
+  var tb = document.getElementById("libPickTbody");
+  if(!list.length){
+    tb.innerHTML = '<tr><td colspan="7" style="text-align:center;color:var(--text-3);padding:28px">暂无匹配指标（已加入的不再展示）</td></tr>';
+    document.getElementById("libPickAll").checked = false;
+    updateLibPickCnt();
+    return;
+  }
+  document.getElementById("libPickAll").checked = list.every(function(p){ return LIB_SEL[p.id]; });
+  tb.innerHTML = list.map(function(p){
+    var on = !!LIB_SEL[p.id];
+    return '<tr class="' + (on ? "on" : "") + '" data-pid="' + p.id + '">'
+      + '<td><input type="checkbox" ' + (on ? "checked" : "") + '></td>'
+      + '<td>' + p.id + '</td>'
+      + '<td class="pt-name" title="' + p.name.replace(/"/g, "&quot;") + '">' + p.name + '</td>'
+      + '<td>' + p.latestDate + '</td>'
+      + '<td class="pt-num">' + p.latestVal + '</td>'
+      + '<td>' + (p.freq || "日度") + '</td>'
+      + '<td>' + p.unit + '</td></tr>';
+  }).join("");
+  updateLibPickCnt();
+}
+function buildLibEditFromSel(){
+  var defDir = STATE.dir || "中国宏观";
+  if(defDir && flattenDirs().indexOf(defDir) < 0){
+    var leaves = flattenDirs().filter(function(p){ return dirPathMatch(p, defDir) || p.indexOf(defDir + "/") === 0; });
+    defDir = leaves[0] || flattenDirs()[0] || "中国宏观";
+  }
+  var prev = {};
+  LIB_EDIT.forEach(function(r){ prev[r.id] = r; });
+  var byId = {};
+  libPool().forEach(function(x){ byId[x.id] = x; });
+  LIB_EDIT = pickSelectedLibIds().map(function(id){
+    if(prev[id]) return prev[id];
+    var p = byId[id];
+    return {
+      id: id,
+      name: p ? p.name : id,
+      unit: p ? p.unit : "",
+      freq: p ? (p.freq || "日度") : "日度",
+      dir: (p && p.dir) || defDir,
+      date: p ? p.latestDate : ""
+    };
+  });
+  if(LIB_DIR_MODE === "same" && LIB_EDIT.length){
+    var same = LIB_EDIT[0].dir || defDir;
+    LIB_EDIT.forEach(function(r){ r.dir = same; });
+  }
+}
+function syncLibEditFromDom(){
+  document.querySelectorAll("#libEditTbody tr[data-bid]").forEach(function(tr){
+    var i = +tr.dataset.bi;
+    if(!LIB_EDIT[i]) return;
+    LIB_EDIT[i].name = (tr.querySelector('[data-k="name"]').value || "").trim();
+    LIB_EDIT[i].unit = (tr.querySelector('[data-k="unit"]').value || "").trim();
+    LIB_EDIT[i].freq = tr.querySelector('[data-k="freq"]').value;
+    var dirEl = tr.querySelector('[data-k="dir"]');
+    LIB_EDIT[i].dir = dirEl ? dirEl.value : "";
+  });
+}
+function libDirCascaderHtml(dir, bi){
+  var nodes = buildLibCascaderNodes();
+  var path = findLibCascaderPath(nodes, dir) || (dir ? [dir] : []);
+  var labels = libCascaderLabels(nodes, path);
+  var text = labels.length ? labels.join(" / ") : "请选择目录";
+  var arrow = '<span class="cc-arrow"><svg class="i" width="12" height="12" aria-hidden="true"><use href="#i-caret-down-12"></use></svg></span>';
+  return '<div class="cascader" data-lib-cc="' + bi + '">'
+    + '<button type="button" class="cascader-trigger" data-cc-trigger>'
+    + '<span class="cc-text' + (labels.length ? "" : " cc-ph") + '">' + text + '</span>' + arrow
+    + '</button>'
+    + '<input type="hidden" data-k="dir" value="' + (dir || "").replace(/"/g, "&quot;") + '">'
+    + '<div class="cascader-panel" data-cc-panel></div>'
+    + '</div>';
+}
+function renderLibCcPanel(cc){
+  var panel = cc.querySelector("[data-cc-panel]");
+  if(!panel) return;
+  var bi = +cc.dataset.libCc;
+  var nodes = buildLibCascaderNodes();
+  var path = findLibCascaderPath(nodes, (LIB_EDIT[bi] && LIB_EDIT[bi].dir) || "") || [];
+  var cols = [];
+  var list = nodes;
+  cols.push(list);
+  for(var i = 0; i < path.length; i++){
+    var cur = null;
+    (list || []).forEach(function(n){ if(n.value === path[i]) cur = n; });
+    if(cur && cur.children && cur.children.length){
+      list = cur.children;
+      cols.push(list);
+    } else break;
+  }
+  var checkSVG = '<svg class="i" width="12" height="12" aria-hidden="true"><use href="#i-check"></use></svg>';
+  var nextSVG = '<svg class="i" width="10" height="10" aria-hidden="true"><use href="#i-chevron-right"></use></svg>';
+  var html = "";
+  cols.forEach(function(items, colIdx){
+    html += '<div class="cascader-col">';
+    (items || []).forEach(function(n){
+      var active = path[colIdx] === n.value;
+      var picked = active && colIdx === path.length - 1;
+      var hasChild = !!(n.children && n.children.length);
+      html += '<div class="cascader-item' + (active ? " on" : "") + (picked ? " picked" : "") + '" data-col="' + colIdx + '" data-val="' + n.value + '">'
+        + '<span class="ci-check">' + checkSVG + '</span>'
+        + '<span class="ci-label">' + n.label + '</span>'
+        + (hasChild ? '<span class="ci-next">' + nextSVG + '</span>' : '<span class="ci-next"></span>')
+        + '</div>';
+    });
+    html += '</div>';
+  });
+  panel.innerHTML = html;
+  placeLibCascaderPanel(cc);
+}
+function setLibDirValue(bi, dir){
+  if(!LIB_EDIT[bi]) return;
+  LIB_EDIT[bi].dir = dir;
+  if(LIB_DIR_MODE === "same"){
+    LIB_EDIT.forEach(function(row){ row.dir = dir; });
+    renderLibEdit();
+    return;
+  }
+  var cc = document.querySelector('#libEditTbody .cascader[data-lib-cc="' + bi + '"]');
+  if(!cc) return;
+  var nodes = buildLibCascaderNodes();
+  var path = findLibCascaderPath(nodes, dir) || (dir ? [dir] : []);
+  var labels = libCascaderLabels(nodes, path);
+  var text = cc.querySelector(".cc-text");
+  text.className = "cc-text" + (labels.length ? "" : " cc-ph");
+  text.textContent = labels.length ? labels.join(" / ") : "请选择目录";
+  cc.querySelector('[data-k="dir"]').value = dir || "";
+  renderLibCcPanel(cc);
+}
+function renderLibEdit(){
+  var tb = document.getElementById("libEditTbody");
+  if(!LIB_EDIT.length){
+    tb.innerHTML = '<tr><td colspan="5" style="text-align:center;color:var(--text-3);padding:28px">暂无已选指标</td></tr>';
+    return;
+  }
+  tb.innerHTML = LIB_EDIT.map(function(row, i){
+    var freqOpts = LIB_FREQ_OPTS.map(function(f){
+      return '<option value="' + f + '"' + (row.freq === f ? " selected" : "") + ">" + f + "</option>";
+    }).join("");
+    return '<tr data-bid="' + row.id + '" data-bi="' + i + '">'
+      + '<td class="be-id">' + row.id + '</td>'
+      + '<td class="be-name"><input type="text" data-k="name" value="' + (row.name || "").replace(/"/g, "&quot;") + '" placeholder="请输入指标名称"></td>'
+      + '<td class="be-unit"><input type="text" data-k="unit" value="' + (row.unit || "").replace(/"/g, "&quot;") + '" placeholder="单位"></td>'
+      + '<td class="be-freq"><select data-k="freq">' + freqOpts + '</select></td>'
+      + '<td class="be-dir">' + libDirCascaderHtml(row.dir, i) + '</td>'
+      + '</tr>';
+  }).join("");
+}
+function setLibStep(step){
+  LIB_STEP = step;
+  document.getElementById("libPane1").classList.toggle("show", step === 1);
+  document.getElementById("libPane2").classList.toggle("show", step === 2);
+  document.getElementById("libStep1Label").className = "bind-step" + (step === 1 ? " on" : " done");
+  document.getElementById("libStep2Label").className = "bind-step" + (step === 2 ? " on" : "");
+  document.getElementById("libPrev").style.display = step === 2 ? "" : "none";
+  document.getElementById("libNext").textContent = step === 1 ? "下一步" : "确认加入";
+  document.getElementById("libCancel").style.display = step === 1 ? "" : "none";
+  document.getElementById("libFoot").style.justifyContent = step === 2 ? "flex-end" : "center";
+  if(step === 2){
+    buildLibEditFromSel();
+    renderLibEdit();
+  }
+}
+function openLibModal(){
+  LIB_SEL = {};
+  LIB_EDIT = [];
+  LIB_DIR_MODE = "split";
+  document.querySelectorAll('input[name="libDirMode"]').forEach(function(r){
+    r.checked = r.value === "split";
+  });
+  /* 列表已勾选项预选中 */
+  Object.keys(STATE.selected).forEach(function(id){
+    if(STATE.selected[id] && !LIB_ADDED[id]) LIB_SEL[id] = true;
+  });
+  fillLibCatOptions();
+  if(STATE.dir){
+    var top = String(STATE.dir).split("/")[0];
+    var cat = document.getElementById("libPickCat");
+    for(var oi = 0; oi < cat.options.length; oi++){
+      if(cat.options[oi].value === top){ cat.value = top; break; }
+    }
+  }
+  document.getElementById("libPickFreq").value = "";
+  document.getElementById("libPickKw").value = "";
+  document.getElementById("libPickAll").checked = false;
+  renderLibPickTable();
+  setLibStep(1);
+  openMask("libMask");
+}
+document.getElementById("btnAddLib").addEventListener("click", openLibModal);
+["libPickCat", "libPickFreq"].forEach(function(id){
+  var el = document.getElementById(id);
+  el.addEventListener("change", renderLibPickTable);
+  el.addEventListener("input", renderLibPickTable);
+});
+document.getElementById("libPickKw").addEventListener("input", renderLibPickTable);
+document.getElementById("libPickAll").addEventListener("change", function(){
+  var on = this.checked;
+  filteredLibPickList().forEach(function(p){ LIB_SEL[p.id] = on; });
+  renderLibPickTable();
+});
+document.getElementById("libPickTbody").addEventListener("click", function(e){
+  var tr = e.target.closest("tr[data-pid]");
+  if(!tr) return;
+  var id = tr.dataset.pid;
+  LIB_SEL[id] = e.target.type === "checkbox" ? e.target.checked : !LIB_SEL[id];
+  renderLibPickTable();
+});
+document.querySelectorAll('input[name="libDirMode"]').forEach(function(r){
+  r.addEventListener("change", function(){
+    if(!this.checked) return;
+    syncLibEditFromDom();
+    LIB_DIR_MODE = this.value;
+    if(LIB_DIR_MODE === "same" && LIB_EDIT.length){
+      var same = LIB_EDIT[0].dir || STATE.dir || flattenDirs()[0];
+      LIB_EDIT.forEach(function(row){ row.dir = same; });
+    }
+    renderLibEdit();
+  });
+});
+document.getElementById("libEditTbody").addEventListener("change", function(e){
+  var tr = e.target.closest("tr[data-bi]");
+  if(!tr) return;
+  var i = +tr.dataset.bi;
+  if(!LIB_EDIT[i]) return;
+  if(e.target.dataset.k === "freq") LIB_EDIT[i].freq = e.target.value;
+});
+document.getElementById("libEditTbody").addEventListener("click", function(e){
+  var trigger = e.target.closest("[data-cc-trigger]");
+  if(trigger){
+    e.stopPropagation();
+    var cc = trigger.closest(".cascader[data-lib-cc]");
+    if(!cc) return;
+    var willOpen = !cc.classList.contains("open");
+    document.querySelectorAll("#libEditTbody .cascader.open").forEach(function(el){
+      el.classList.remove("open");
+    });
+    if(willOpen){
+      cc.classList.add("open");
+      renderLibCcPanel(cc);
+      placeLibCascaderPanel(cc);
+    }
+    return;
+  }
+  var item = e.target.closest(".cascader-item");
+  if(!item) return;
+  e.stopPropagation();
+  var cc = item.closest(".cascader[data-lib-cc]");
+  if(!cc) return;
+  var bi = +cc.dataset.libCc;
+  var nodes = buildLibCascaderNodes();
+  var path = findLibCascaderPath(nodes, (LIB_EDIT[bi] && LIB_EDIT[bi].dir) || "") || [];
+  var col = +item.dataset.col;
+  var val = item.dataset.val;
+  path = path.slice(0, col);
+  path.push(val);
+  var dir = path[path.length - 1] || "";
+  setLibDirValue(bi, dir);
+  var node = null, list = nodes;
+  for(var i = 0; i < path.length; i++){
+    node = null;
+    (list || []).forEach(function(n){ if(n.value === path[i]) node = n; });
+    list = node && node.children;
+  }
+  if(node && !(node.children && node.children.length)){
+    cc.classList.remove("open");
+  } else {
+    cc.classList.add("open");
+    renderLibCcPanel(cc);
+    placeLibCascaderPanel(cc);
+  }
+});
+document.addEventListener("click", function(e){
+  if(e.target.closest("#libEditTbody .cascader")) return;
+  document.querySelectorAll("#libEditTbody .cascader.open").forEach(function(el){
+    el.classList.remove("open");
+  });
+});
+document.getElementById("libPrev").addEventListener("click", function(){
+  syncLibEditFromDom();
+  setLibStep(1);
+});
+document.getElementById("libNext").addEventListener("click", function(){
+  if(LIB_STEP === 1){
+    if(!pickSelectedLibIds().length){ toast("请至少勾选一个指标"); return; }
+    setLibStep(2);
+    return;
+  }
+  syncLibEditFromDom();
+  for(var i = 0; i < LIB_EDIT.length; i++){
+    var row = LIB_EDIT[i];
+    if(!row.name){ toast("请填写指标名称：" + row.id); return; }
+    if(!row.unit){ toast("请填写单位：" + row.id); return; }
+    if(!row.freq){ toast("请选择频度：" + row.id); return; }
+    if(!row.dir){ toast("请选择指标目录：" + row.id); return; }
+  }
+  var byName = {};
+  aggregateIndicators(ROWS).forEach(function(x){ byName[x.id] = x.name; });
+  var added = 0;
+  var lastDir = STATE.dir;
+  LIB_EDIT.forEach(function(row){
+    if(LIB_ADDED[row.id]) return;
+    LIB_ADDED[row.id] = true;
+    var oldName = byName[row.id];
+    ROWS.forEach(function(r){
+      if(r.id === row.id || r.name === oldName){
+        r.name = row.name;
+        r.unit = row.unit;
+        r.freq = row.freq;
+        r.dir = row.dir;
+        if(!r.id) r.id = row.id;
+      }
+    });
+    lastDir = row.dir;
+    added++;
+  });
+  if(!added){ toast("所选指标均已加入指标库"); return; }
+  STATE.selected = {};
+  STATE.dir = lastDir;
+  closeMask("libMask");
+  refresh();
+  toast("已加入指标库 " + added + " 条，目录「" + lastDir + "」（来源：手工）");
+});
+
+/* ---- 批量删除 / 导出 ---- */
+document.getElementById("btnBatchDel").addEventListener("click", function(){
+  var ids = Object.keys(STATE.selected).filter(function(k){ return STATE.selected[k]; });
+  if(!ids.length) return;
+  var nameById = {};
+  aggregateIndicators(ROWS).forEach(function(x){ nameById[x.id] = x.name; });
+  var names = {};
+  ids.forEach(function(id){ if(nameById[id]) names[nameById[id]] = 1; });
+  ROWS = ROWS.filter(function(r){ return !names[r.name]; });
+  STATE.selected = {};
+  refresh();
+  toast("已删除 " + ids.length + " 个指标");
+});
+document.getElementById("btnExport").addEventListener("click", function(){
+  var list = filteredIndicators();
+  if(!list.length){ toast("当前没有可导出的数据"); return; }
+  var grid = [["指标ID","指标名称","所属目录","品种","单位","创建人","最新日期","最新值"]];
+  list.forEach(function(x){
+    grid.push([x.id, x.name, x.dir || "", x.variety || "", x.unit, x.creator, x.latestDate, x.latestVal]);
+  });
+  downloadBlob(buildXlsxBlob(grid, "手工录入数据"), "手工录入数据导出.xlsx");
+  toast("已导出 " + list.length + " 个指标");
+});
+
+/* ---- 筛选 / 目录 / 表格事件 ---- */
+document.getElementById("dirTree").addEventListener("click", function(e){
+  var op = e.target.closest(".di-add, .di-edit, .di-del");
+  if(op){
+    e.stopPropagation();
+    var p = op.dataset.path;
+    if(op.classList.contains("di-add")) openDirAddModal(p);
+    else if(op.classList.contains("di-edit")) openDirEditModal(p);
+    else if(op.classList.contains("di-del")) deleteDirByPath(p);
+    return;
+  }
+  var item = e.target.closest(".dir-item");
+  if(!item) return;
+  var kids = item.nextElementSibling;
+  if(kids && kids.classList.contains("dir-children") && e.target.closest(".di-arrow")){
+    kids.classList.toggle("open");
+    item.classList.toggle("open");
+    return;
+  }
+  if(kids && kids.classList.contains("dir-children")){
+    kids.classList.add("open");
+    item.classList.add("open");
+  }
+  STATE.dir = item.dataset.path || "";
+  STATE.page = 1;
+  document.querySelectorAll(".dir-item").forEach(function(d){ d.classList.remove("active"); });
+  item.classList.add("active");
+  syncAddDirBtn();
+  renderTable();
+});
+function openDirAddModal(parentPath){
+  DIR_ADD_PARENT = parentPath || "";
+  document.getElementById("daParent").textContent = DIR_ADD_PARENT || "根目录（一级目录）";
+  document.getElementById("daName").value = "";
+  openMask("dirAddMask");
+  setTimeout(function(){ document.getElementById("daName").focus(); }, 40);
+}
+function openDirEditModal(path){
+  if(!path) return;
+  var parts = path.split("/");
+  var isChild = parts.length > 1;
+  DIR_EDIT_CTX = { path: path, level: isChild ? "child" : "top" };
+  if(isChild){
+    var loc = dirLocate(path);
+    DIR_EDIT_CTX.loc = loc;
+    document.getElementById("deName").value = parts[parts.length - 1];
+    var sel = document.getElementById("deParent");
+    var parentPath = parts.slice(0, -1).join("/");
+    sel.innerHTML = '<option value="' + parentPath + '" selected>' + parentPath + "</option>";
+    sel.disabled = true;
+  }else{
+    DIR_EDIT_CTX.topIdx = DIR_TREE.findIndex(function(d){ return d.name === path; });
+    document.getElementById("deName").value = path;
+    var sel2 = document.getElementById("deParent");
+    sel2.innerHTML = '<option value="">根目录（一级目录）</option>';
+    sel2.value = "";
+    sel2.disabled = true;
+  }
+  openMask("dirEditMask");
+  setTimeout(function(){ document.getElementById("deName").focus(); }, 40);
+}
+function deleteDirByPath(path){
+  if(!path) return;
+  var parts = path.split("/");
+  var label = parts[parts.length - 1];
+  var cnt = dirCntOf(path);
+  if(!confirm(cnt > 0
+    ? "目录「" + label + "」下仍有 " + cnt + " 个指标，确认删除该目录？"
+    : "确认删除目录「" + label + "」？")) return;
+  var loc = dirLocate(path);
+  if(!loc){ toast("目录不存在"); return; }
+  loc.container.splice(loc.index, 1);
+  if(STATE.dir === path || STATE.dir.indexOf(path + "/") === 0) STATE.dir = "";
+  refresh();
+  toast("已删除目录：" + label);
+}
+document.getElementById("btnAddDir").addEventListener("click", function(){
+  openDirAddModal(selectedDirParent());
+});
+document.getElementById("daOk").addEventListener("click", function(){
+  var name = document.getElementById("daName").value.trim();
+  if(!name){ toast("请填写目录名称"); return; }
+  if(/[\/\\]/.test(name)){ toast("目录名称不能包含斜杠"); return; }
+  var result = dirAddUnder(DIR_ADD_PARENT || "", name);
+  if(!result.ok){ toast(result.msg); return; }
+  STATE.dir = result.path;
+  closeMask("dirAddMask");
+  refresh();
+  toast("已添加子目录：" + name);
+});
+document.getElementById("deOk").addEventListener("click", function(){
+  if(!DIR_EDIT_CTX) return;
+  var name = document.getElementById("deName").value.trim();
+  if(!name){ toast("请填写目录名称"); return; }
+  if(/[\/\\]/.test(name)){ toast("目录名称不能包含斜杠"); return; }
+  var oldPath = DIR_EDIT_CTX.path;
+  if(DIR_EDIT_CTX.level === "top"){
+    var node = DIR_TREE[DIR_EDIT_CTX.topIdx];
+    if(!node || node.all){ toast("目录不存在"); return; }
+    if(name !== node.name && DIR_TREE.some(function(d){ return d.name === name; })){
+      toast("已存在同名一级目录"); return;
+    }
+    node.name = name;
+    ROWS.forEach(function(r){
+      if(r.dir === oldPath) r.dir = name;
+      else if(r.dir && r.dir.indexOf(oldPath + "/") === 0) r.dir = name + r.dir.slice(oldPath.length);
+    });
+    if(STATE.dir === oldPath) STATE.dir = name;
+    else if(STATE.dir.indexOf(oldPath + "/") === 0) STATE.dir = name + STATE.dir.slice(oldPath.length);
+  }else{
+    var loc = DIR_EDIT_CTX.loc || dirLocate(oldPath);
+    if(!loc){ toast("目录不存在"); return; }
+    var conflict = loc.container.some(function(c, i){
+      if(i === loc.index) return false;
+      return dirChildName(c) === name;
+    });
+    if(conflict){ toast("同级已存在同名目录"); return; }
+    var cur = loc.container[loc.index];
+    if(typeof cur === "string") loc.container[loc.index] = name;
+    else cur.name = name;
+    var parentPath = oldPath.split("/").slice(0, -1).join("/");
+    var newPath = parentPath + "/" + name;
+    ROWS.forEach(function(r){
+      if(r.dir === oldPath) r.dir = newPath;
+      else if(r.dir && r.dir.indexOf(oldPath + "/") === 0) r.dir = newPath + r.dir.slice(oldPath.length);
+    });
+    if(STATE.dir === oldPath) STATE.dir = newPath;
+    else if(STATE.dir.indexOf(oldPath + "/") === 0) STATE.dir = newPath + STATE.dir.slice(oldPath.length);
+  }
+  closeMask("dirEditMask");
+  DIR_EDIT_CTX = null;
+  refresh();
+  toast("目录已保存");
+});
+document.getElementById("catKw").addEventListener("input", function(e){
+  STATE.kw = e.target.value;
+  STATE.page = 1;
+  renderTable();
+});
+document.getElementById("dirOnlyMine").addEventListener("change", function(e){
+  STATE.onlyMine = !!e.target.checked;
+  STATE.page = 1;
+  renderTable();
+});
+document.getElementById("dirCollapse").addEventListener("click", function(){
+  document.querySelector(".body-row").classList.toggle("folded");
+});
+document.getElementById("tableWrap").addEventListener("change", function(e){
+  if(e.target.id === "chkAll"){
+    var list = filteredIndicators().slice((STATE.page-1)*STATE.pageSize, STATE.page*STATE.pageSize);
+    list.forEach(function(x){ STATE.selected[x.id] = e.target.checked; });
+    renderTable();
+    return;
+  }
+  if(e.target.classList.contains("row-chk")){
+    STATE.selected[e.target.getAttribute("data-id")] = e.target.checked;
+    syncBatchDel();
+  }
+});
+document.getElementById("pager").addEventListener("click", function(e){
+  var b = e.target.closest("button[data-p]"); if(!b || b.disabled) return;
+  STATE.page = +b.getAttribute("data-p");
+  renderTable();
+});
+document.getElementById("pager").addEventListener("change", function(e){
+  if(e.target.id !== "pageJump") return;
+  var n = parseInt(e.target.value, 10);
+  if(!n || n < 1) return;
+  STATE.page = n;
+  renderTable();
+});
+
+/* ---- 弹窗通用 ---- */
+document.querySelectorAll(".modal-mask").forEach(function(m){
+  m.querySelectorAll("[data-close]").forEach(function(b){
+    b.addEventListener("click", function(){
+      var id = b.getAttribute("data-close") || m.id;
+      if(id === "importPreviewMask") STATE.pendingRows = [];
+      closeMask(id);
+    });
+  });
+  m.addEventListener("click", function(e){
+    if(e.target === m){
+      if(m.id === "importPreviewMask") STATE.pendingRows = [];
+      m.classList.remove("show");
+      notifyParentModal();
+    }
+  });
+});
+document.addEventListener("keydown", function(e){
+  if(e.key === "Escape"){
+    closePreviewLight();
+    if(document.getElementById("importPreviewMask").classList.contains("show")) STATE.pendingRows = [];
+    document.querySelectorAll(".modal-mask.show").forEach(function(m){ m.classList.remove("show"); });
+    notifyParentModal();
+  }
+});
+
+refresh();
+(function(){
+  var q = new URLSearchParams(location.search);
+  if(q.get("embed") === "1"){
+    document.body.classList.add("embed");
+  }else{
+    /* 独立打开时回到数据源页内切换，避免另起菜单页 */
+    location.replace("data-source.html?view=manual");
+  }
+})();
+</script>
+<script>
+(function(){
+  var menu = document.querySelector(".sidebar .menu");
+  if(!menu || menu.dataset.volcBound === "1") return;
+  menu.dataset.volcBound = "1";
+  menu.addEventListener("click", function(e){
+    if(e.target.closest(".mi-arrow")) return;
+    var sub = e.target.closest(".sub-item");
+    if(sub && menu.contains(sub)){
+      var wrap = sub.parentElement;
+      if(wrap) wrap.querySelectorAll(".sub-item").forEach(function(b){ b.classList.remove("active","on"); });
+      sub.classList.add("active");
+      menu.querySelectorAll(":scope > .menu-item").forEach(function(b){ b.classList.remove("active"); });
+      var prev = wrap && wrap.previousElementSibling;
+      if(prev && prev.classList.contains("menu-item")) prev.classList.add("active");
+      return;
+    }
+    var item = e.target.closest(".menu-item");
+    if(!item || !menu.contains(item) || item.closest(".sub-menu")) return;
+    menu.querySelectorAll(":scope > .menu-item").forEach(function(b){ b.classList.remove("active"); });
+    item.classList.add("active");
+  });
+})();
+</script>
+
+<script>
+(function(){
+  var app = document.querySelector(".app");
+  if(!app) return;
+  document.querySelectorAll(".sidebar .menu-item").forEach(function(b){
+    if(b.getAttribute("data-tip")) return;
+    var t = "";
+    b.childNodes.forEach(function(n){ if(n.nodeType === 3) t += n.textContent; });
+    t = t.replace(/\s+/g, " ").trim();
+    if(t) b.setAttribute("data-tip", t);
+  });
+  document.querySelectorAll(".sb-collapse").forEach(function(b){
+    if(!b || b.dataset.navBound === "1") return;
+    b.dataset.navBound = "1";
+    if(!b.getAttribute("data-tip")) b.setAttribute("data-tip", "展开菜单");
+    b.addEventListener("click", function(){
+      app.classList.toggle("nav-collapsed");
+      b.setAttribute("data-tip", app.classList.contains("nav-collapsed") ? "展开菜单" : "收起菜单");
+    });
+  });
+})();
+</script>
+</body>
+</html>

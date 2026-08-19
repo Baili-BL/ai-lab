@@ -1,0 +1,7 @@
+# macOS
+.DS_Store
+
+# 本地工作目录 / 中间产物
+.workbuddy/
+static-html/
+*.bak*

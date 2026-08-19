@@ -1,0 +1,293 @@
+<!DOCTYPE html>
+<html lang="zh-CN"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>数据源模块 · 原型交互批注需求 · AILab</title><style>
+
+  :root{
+    --primary:#2f6bff; --primary-bg:#eaf1ff; --primary-soft:#f3f7ff;
+    --text:#1f2329; --text-2:#646a73; --text-3:#8f959e;
+    --border:#e3e6eb; --bg:#f0f2f5; --card:#fff;
+    --ok:#12b76a; --warn:#b25f09; --danger:#e34d59;
+    --radius:10px; --shadow:0 1px 2px rgba(15,23,42,.04),0 8px 24px rgba(15,23,42,.06);
+    --side:248px;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  html{scroll-behavior:smooth}
+  body{
+    font-family:-apple-system,BlinkMacSystemFont,"PingFang SC","Hiragino Sans GB","Microsoft YaHei",sans-serif;
+    color:var(--text); background:var(--bg); line-height:1.55; font-size:14px;
+  }
+  a{color:var(--primary); text-decoration:none}
+  a:hover{text-decoration:underline}
+  code,kbd{
+    font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
+    font-size:12px; background:#f2f4f7; border:1px solid var(--border);
+    border-radius:4px; padding:1px 6px; color:#344054;
+  }
+
+  .layout{display:flex; min-height:100vh}
+  .nav{
+    width:var(--side); flex-shrink:0; position:sticky; top:0; height:100vh;
+    background:#fff; border-right:1px solid var(--border); overflow-y:auto;
+    padding:18px 14px 28px;
+  }
+  .nav .brand{display:flex; gap:10px; align-items:center; padding:4px 8px 16px; border-bottom:1px solid var(--border); margin-bottom:14px}
+  .nav .brand-mark{width:28px;height:28px;border-radius:7px;display:block;object-fit:contain;flex-shrink:0}
+  .nav .eta{
+    width:34px; height:26px; border-radius:5px; background:var(--primary); color:#fff;
+    display:flex; align-items:center; justify-content:center; font-weight:800; font-size:11px;
+  }
+  .nav .brand b{display:block; font-size:13px}
+  .nav .brand span{font-size:11px; color:var(--text-3)}
+  .nav .group{font-size:11px; color:var(--text-3); padding:10px 10px 6px; letter-spacing:.04em}
+  .nav a.item{
+    display:block; padding:8px 10px; border-radius:8px; color:var(--text-2);
+    font-size:13px; text-decoration:none; margin-bottom:2px;
+  }
+  .nav a.item:hover,.nav a.item.on{background:var(--primary-bg); color:var(--primary); font-weight:500}
+  .nav .proto-links{margin-top:16px; padding-top:14px; border-top:1px solid var(--border)}
+  .nav .proto-links a{display:block; font-size:12.5px; padding:6px 10px; color:var(--text-2)}
+
+  .main{flex:1; min-width:0; padding:28px 36px 80px}
+  .hero{
+    background:linear-gradient(135deg,#f7f9ff 0%,#fff 48%,#eef5ff 100%);
+    border:1px solid var(--border); border-radius:14px; padding:28px 30px 24px;
+    box-shadow:var(--shadow); margin-bottom:22px;
+  }
+  .hero .eyebrow{font-size:12px; color:var(--primary); font-weight:600; letter-spacing:.04em; margin-bottom:8px}
+  .hero h1{font-size:26px; letter-spacing:-.02em; margin-bottom:8px}
+  .hero p{color:var(--text-2); max-width:720px; font-size:14px}
+  .meta{
+    display:flex; flex-wrap:wrap; gap:8px; margin-top:16px;
+  }
+  .tag{
+    display:inline-flex; align-items:center; gap:6px;
+    padding:5px 10px; border-radius:999px; background:#fff;
+    border:1px solid var(--border); font-size:12px; color:var(--text-2);
+  }
+  .tag b{color:var(--text); font-weight:600}
+
+  .section{margin-bottom:28px; scroll-margin-top:20px}
+  .section > h2{
+    font-size:18px; margin-bottom:12px; display:flex; align-items:center; gap:10px;
+  }
+  .section > h2 .n{
+    width:28px; height:28px; border-radius:8px; background:var(--primary);
+    color:#fff; font-size:13px; display:inline-flex; align-items:center; justify-content:center;
+  }
+  .section > h3{font-size:15px; margin:18px 0 10px; color:var(--text)}
+  .lead{color:var(--text-2); margin-bottom:12px; font-size:13.5px}
+
+  .card{
+    background:var(--card); border:1px solid var(--border); border-radius:var(--radius);
+    box-shadow:var(--shadow); overflow:hidden; margin-bottom:14px;
+  }
+  .card .shot{
+    background:#e8ebf0; border-bottom:1px solid var(--border);
+    padding:14px 14px 10px; cursor:zoom-in;
+  }
+  .card .shot img{
+    display:block; width:100%; max-height:460px; object-fit:contain; object-position:top;
+    background:#fff; border:1px solid var(--border); border-radius:8px;
+  }
+  .card .shot .cap{
+    display:flex; justify-content:space-between; align-items:center;
+    margin-top:8px; font-size:12px; color:var(--text-3);
+  }
+  .card .body{padding:14px 16px 16px}
+  .card .body h4{font-size:14px; margin-bottom:10px}
+
+  table.ann{width:100%; border-collapse:collapse; font-size:13px}
+  table.ann th{
+    text-align:left; background:#f7f8fa; color:var(--text-2); font-weight:500;
+    padding:9px 10px; border-bottom:1px solid var(--border); white-space:nowrap;
+  }
+  table.ann td{padding:10px; border-bottom:1px solid #f0f1f4; vertical-align:top}
+  table.ann tr:last-child td{border-bottom:none}
+  table.ann td:first-child{width:48px; white-space:nowrap}
+  table.ann td:nth-child(2){width:140px; color:var(--text); font-weight:500}
+  table.ann.ann-req td:nth-child(2){width:120px}
+  table.ann.ann-req td:nth-child(3){width:34%; color:var(--text); font-weight:400}
+  table.ann.ann-req td:nth-child(4){color:var(--text-2)}
+  table.ann.ann-req th:nth-child(3){color:var(--primary)}
+  pre.tree{
+    background:#fff;border:1px solid var(--border);border-radius:10px;
+    padding:14px 16px;font-size:12.5px;line-height:1.7;overflow:auto;margin-bottom:14px;
+  }
+  .no{display:inline-flex; min-width:22px; height:22px; padding:0 6px; border-radius:6px;
+    background:var(--primary-bg); color:var(--primary); font-size:12px; font-weight:700;
+    align-items:center; justify-content:center}
+
+  .grid-2{display:grid; grid-template-columns:1fr 1fr; gap:14px}
+  @media (max-width:1100px){
+    .nav{display:none}
+    .main{padding:20px 16px 60px}
+    .grid-2{grid-template-columns:1fr}
+  }
+
+  .info{
+    background:var(--primary-soft); border:1px solid #d6e4ff; border-radius:10px;
+    padding:12px 14px; color:#304b8a; font-size:13px; margin:10px 0 14px;
+  }
+  .info b{color:var(--text)}
+
+  .src-table{width:100%; border-collapse:collapse; font-size:13px; background:#fff;
+    border:1px solid var(--border); border-radius:10px; overflow:hidden}
+  .src-table th,.src-table td{padding:10px 12px; border-bottom:1px solid var(--border); text-align:left}
+  .src-table th{background:#f7f8fa; color:var(--text-2); font-weight:500}
+  .src-table tr:last-child td{border-bottom:none}
+
+  .flow{
+    display:grid; gap:10px; margin-top:8px;
+  }
+  .flow .f{
+    background:#fff; border:1px solid var(--border); border-radius:10px; padding:12px 14px;
+  }
+  .flow .f b{display:block; margin-bottom:4px; font-size:13.5px}
+  .flow .f span{color:var(--text-2); font-size:13px}
+
+  .check{list-style:none; display:grid; gap:8px}
+  .check li{
+    background:#fff; border:1px solid var(--border); border-radius:8px;
+    padding:10px 12px; display:flex; gap:10px; align-items:flex-start;
+  }
+  .check li::before{
+    content:""; width:16px; height:16px; margin-top:2px; flex-shrink:0;
+    border:1.5px solid #c9cdd4; border-radius:4px; background:#fff;
+  }
+
+  .lightbox{
+    position:fixed; inset:0; background:rgba(15,23,42,.72); display:none;
+    align-items:center; justify-content:center; z-index:1000; padding:24px; cursor:zoom-out;
+  }
+  .lightbox.show{display:flex}
+  .lightbox img{
+    max-width:min(1400px,96vw); max-height:92vh; border-radius:10px;
+    box-shadow:0 20px 60px rgba(0,0,0,.35); background:#fff;
+  }
+
+  .foot{margin-top:28px; color:var(--text-3); font-size:12.5px; text-align:center}
+
+
+</style></head><body>
+<header class="top"><div class="wrap"><div class="brand">AILab · AI指标工坊</div><div class="sub">数据源模块 · 原型批注需求 V2.0</div></div></header>
+<main class="wrap"><nav class="toc"><b>目录</b><ol><li><a href="#s-0">0. 范围与入口</a></li><li><a href="#s-1">1. 三源配置页 · 总览（以钢联为例）</a></li><li><a href="#s-2">2. 数据预览</a></li><li><a href="#s-3">3. 任务调度</a></li><li><a href="#s-4">4. 指标登记注册</a></li><li><a href="#s-5">5. 目录绑定（两步）</a></li><li><a href="#s-6">6. 同花顺 / SMM 差异批注</a></li><li><a href="#s-7">7. 手工录入数据</a></li><li><a href="#s-8">8. 目录治理（三源与手工共用规则）</a></li><li><a href="#s-9">9. 端到端路径（批注速查）</a></li><li><a href="#s-10">10. 验收清单（对照原型）</a></li><li><a href="#s-11">11. 截图索引</a></li></ol></nav><table class="src-table"><thead><tr><th>项目</th><th>说明</th></tr></thead><tbody><tr><td>产品</td><td>AILab AI指标工坊</td></tr><tr><td>模块</td><td>数据源</td></tr><tr><td>文档风格</td><td>原型截图 / 区域 → <b>需求说明</b> + <b>交互说明</b></td></tr><tr><td>版本</td><td>V2.0（批注版）</td></tr><tr><td>日期</td><td>2026-08-12</td></tr><tr><td>原型文件</td><td><code>data-source.html</code>、<code>manual-data.html</code></td></tr><tr><td>截图目录</td><td><code>docs/prd-screenshots/</code></td></tr><tr><td>范围</td><td>上海钢联、同花顺、SMM、手工录入数据</td></tr><tr><td>维护约定</td><td><b>原型（<code>data-source.html</code> / <code>manual-data.html</code>）功能变更时，须同步更新本文档（<code>.md</code> + <code>.html</code>）与相关截图</b></td></tr></tbody></table>
+<blockquote>阅读方式：每张图下方用 <b>①②③…</b> 对应界面区域。  <br>- <b>需求说明</b>：要解决什么问题、业务规则、约束与验收口径  <br>- <b>交互说明</b>：点哪里、发生什么、即时反馈  <br>对象模型与校验枚举可对照 <code>数据源模块-产品需求文档.md</code>。</blockquote>
+<h3>V2.0 变更摘要</h3>
+<table class="src-table"><thead><tr><th>项</th><th>说明</th></tr></thead><tbody><tr><td>触发方式</td><td>仅两种：<b>系统默认调度</b>（未配置）、<b>自动调度</b>（已配置）；删除「手动执行」</td></tr><tr><td>筛选扩展</td><td>增加 <b>配置状态</b>（已配置/未配置）、<b>触发方式</b> 筛选</td></tr><tr><td>未配置文案</td><td>调度时间显示「<b>按照系统调度执行</b>」</td></tr><tr><td>状态列</td><td>仅保留启停开关，<b>去掉开关右侧文案</b></td></tr><tr><td>操作列</td><td>图标化：编辑（未配置/已配置区分）+ <b>立即执行 / 暂停同一位置切换</b> + 执行日志</td></tr><tr><td>执行日志</td><td>居中弹窗明细表（非侧栏）</td></tr><tr><td>登记模板</td><td>入口可下载「<b>数据登记注册 Excel 模板</b>」</td></tr><tr><td>周期多选</td><td><b>每旬</b>下拉多选 1–30 日；<b>每月</b>下拉多选日/月末；<b>每季</b>季度月（季初/中/末）联动 + 日期多选；<b>每半年/每年</b>月份+日期多选</td></tr></tbody></table>
+<h3>V1.9 变更摘要</h3>
+<table class="src-table"><thead><tr><th>项</th><th>说明</th></tr></thead><tbody><tr><td>星期多选</td><td>每周支持多选星期 1–7</td></tr><tr><td>周期不选具体日期</td><td><b>每旬 / 每季 / 每半年 / 每年</b> 仅设执行时间，由系统节点调度；<b>每月</b>仍选执行日</td></tr><tr><td>去掉修改人</td><td>配置弹层不再填写修改人（列表修改人仍由系统记录当前用户）</td></tr><tr><td>失败重跑</td><td>高级配置：默认失败重跑 <b>3 次</b>、间隔 <b>5 分钟</b>（可改）</td></tr></tbody></table>
+<h3>V1.8 变更摘要</h3>
+<table class="src-table"><thead><tr><th>项</th><th>说明</th></tr></thead><tbody><tr><td>调度配置结构</td><td>对齐有数 BI 推送任务：<b>基础配置</b> / <b>高级配置</b> 双 Tab</td></tr><tr><td>基础配置</td><td>执行频率 + 随频率的日期/星期 + 执行时间</td></tr><tr><td>高级配置</td><td><b>规则配置</b> + Cron</td></tr></tbody></table>
+<h3>V1.7 变更摘要</h3>
+<table class="src-table"><thead><tr><th>项</th><th>说明</th></tr></thead><tbody><tr><td>频率配置拆分</td><td><b>每天</b>：仅多时刻；<b>每周</b>：先选星期 1–7，再选时刻；<b>每旬/每月</b>：日历日多选 + 时刻；<b>每季/半年/每年</b>：日期选择器多选 + 时刻</td></tr></tbody></table>
+<h3>V1.6 变更摘要</h3>
+<table class="src-table"><thead><tr><th>项</th><th>说明</th></tr></thead><tbody><tr><td>频率联动</td><td>「执行频率」下拉与下方日期面板联动：每天仅时刻；每周星期；每旬旬日；月/季/半年/年多选日期</td></tr><tr><td>多时刻</td><td>取消「每天最多 8 个时刻」限制，可任意添加</td></tr><tr><td>列表字段</td><td>去掉「关联目录」；新增「修改人」；配置弹层可填修改人并写入日志</td></tr><tr><td>指标日志</td><td>关联指标可点击，打开右侧日志抽屉查看该任务/指标相关记录</td></tr></tbody></table>
+<h3>V1.5 变更摘要</h3>
+<table class="src-table"><thead><tr><th>项</th><th>说明</th></tr></thead><tbody><tr><td>品牌</td><td>全局侧栏由 ETA 替换为 <b>AILab · AI指标工坊</b></td></tr><tr><td>调度配置增强</td><td>月/季/半年/年支持<b>多选日期</b>（1–31 日 + 月末），并保留多时刻；提供 1 日 / 月末 / 1,15 / 旬度 快捷项</td></tr></tbody></table>
+<h3>V1.4 变更摘要</h3>
+<table class="src-table"><thead><tr><th>项</th><th>说明</th></tr></thead><tbody><tr><td>任务调度容器</td><td>居中弹窗改为<b>底部抽屉</b>（约 90vh），全屏遮罩 + 背景模糊；三源共用</td></tr><tr><td>筛选</td><td>「调度分类 / 执行时间 / 状态」收拢为三个筛选按钮；支持上次执行日期区间</td></tr><tr><td>调度配置</td><td>可视化配置替代纯文案 Cron：频率下拉（每天/周/旬/月/季/半年/年）+ 多时刻；每天最多 8 个时刻</td></tr><tr><td>（沿用 V1.3）文档结构</td><td>需求说明 + 交互说明双栏</td></tr><tr><td>（沿用 V1.2）级联选择</td><td>Cascader / portal</td></tr></tbody></table>
+<h3>V1.3 变更摘要</h3>
+<table class="src-table"><thead><tr><th>项</th><th>说明</th></tr></thead><tbody><tr><td>文档结构</td><td>区域批注表增加「需求说明」列，与「交互说明」并列</td></tr><tr><td>（沿用 V1.2）级联选择</td><td>编辑 / 登记 / 绑定步骤2 / 批量移动 / 手工批量加入 统一 Cascader</td></tr><tr><td>（沿用 V1.2）弹层</td><td>限宽高、列内滚动；表格内可 portal 防裁切</td></tr></tbody></table>
+<hr>
+<h2 id="s-0">0. 范围与入口</h2>
+<pre><code>侧边栏 · 数据源
+├── 上海钢联     → 三源配置页（公共布局，目录/指标不同）
+├── 同花顺       → 同上
+├── SMM          → 同上
+└── 手工录入数据 → 手工页（iframe 嵌入，支持 Excel 导入）</code></pre>
+<table class="src-table"><thead><tr><th>数据源</th><th>分类</th><th>导出场商标签</th><th>目录特点</th></tr></thead><tbody><tr><td>上海钢联</td><td>行业数据</td><td>Mysteel</td><td>预置多为两级（如 <code>黑色建材/螺纹钢</code>）；可继续下挂，<b>最多 6 级</b></td></tr><tr><td>同花顺</td><td>金融市场</td><td>iFinD</td><td>行情/财务/宏观；部分一级即叶子；同样最多 6 级</td></tr><tr><td>SMM</td><td>行业数据</td><td>Smm</td><td>有色/基本金属/新能源；同样最多 6 级</td></tr><tr><td>手工录入</td><td>—</td><td>—</td><td>对齐指标中心目录；Excel / 在线补数</td></tr></tbody></table>
+<p><b>不在本期：</b> 数据源总览列表页（原型已移除，菜单直达配置）；其他厂商源。</p>
+<hr>
+<h2 id="s-1">1. 三源配置页 · 总览（以钢联为例）</h2>
+<div class="card"><div class="shot"><img src="prd-screenshots/01-gl-config.png" alt="上海钢联配置-空目录"><div class="cap"><span>上海钢联配置-空目录</span><span>点击图片可放大</span></div></div></div>
+<table class="src-table"><thead><tr><th>编号</th><th>区域</th><th>需求说明</th><th>交互说明</th></tr></thead><tbody><tr><td>①</td><td>侧栏「数据源」子菜单</td><td>四源独立入口，避免总览页二次跳转；当前源上下文决定目录树、任务与厂商标签</td><td>点击「上海钢联 / 同花顺 / SMM / 手工录入数据」切换；当前项高亮；面包屑为 <code>数据源 / {源名}配置</code> 或 <code>手工录入数据</code></td></tr><tr><td>②</td><td>目录树</td><td>支撑多级业务分类（≤6 级）；角标反映目录下指标规模，便于治理与定位</td><td>展示目录与数量；点击刷新右侧；悬停/选中显示「＋」与移动/编辑/删除（对齐指标中心）</td></tr><tr><td>③</td><td>目录搜索 + 精准匹配</td><td>在深目录中快速定位指标；精准模式用于 ID/全名核验，减少误命中</td><td>按指标 ID/名称过滤树；开启精准匹配则完全相等才命中</td></tr><tr><td>④</td><td>「只看我的」</td><td>个人工作台视角，过滤与当前用户相关的目录/指标</td><td>勾选后仅展示当前用户相关数据，与列表筛选联动</td></tr><tr><td>⑤</td><td>添加一级目录 / 批量移动指标</td><td>一级目录集中创建；子级在行内添加；批量移动支撑目录重组</td><td>底部：新增根目录或打开批量移动；子目录用行「＋」，不再用底部「添加二级」</td></tr><tr><td>⑥</td><td>列表 / 数据预览</td><td>元数据浏览与时序核验分离，降低单页信息密度</td><td>分段切换；列表看元数据，预览看时序明细</td></tr><tr><td>⑦</td><td>列表筛选</td><td>按名称/创建人/部门缩小范围，支撑协作检索</td><td>关键词 + 创建人下拉</td></tr><tr><td>⑧</td><td>任务调度 / 登记 / 绑定</td><td>三源核心作业入口：调度同步、登记已知 ID、从厂商池绑定</td><td>三个主按钮，分别进入 §3～§5</td></tr><tr><td>⑨</td><td>空态</td><td>空目录需可行动引导，降低「无数据不知如何继续」成本</td><td>提示无指标，并提供「前往指标登记注册」快捷链</td></tr></tbody></table>
+<p><b>有数据时的列表态：</b></p>
+<div class="card"><div class="shot"><img src="prd-screenshots/01b-gl-leaf.png" alt="钢联-螺纹钢列表"><div class="cap"><span>钢联-螺纹钢列表</span><span>点击图片可放大</span></div></div></div>
+<table class="src-table"><thead><tr><th>编号</th><th>区域</th><th>需求说明</th><th>交互说明</th></tr></thead><tbody><tr><td>①</td><td>指标表格</td><td>列表需覆盖标识、来源、责任人、更新与状态，支撑运维与编辑入口</td><td>列：指标ID、名称、来源、创建人、来源部门、更新方式、数据日期、数据状态、收藏、<b>操作</b></td></tr><tr><td>②</td><td>来源标签</td><td>区分自动采集与人工维护，决定后续更新预期</td><td>展示 RPA / 手工（或厂商标签）；RPA 通常对应「定时更新」</td></tr><tr><td>③</td><td>数据状态</td><td>标识是否已按任务更新，便于发现滞后指标</td><td>「已更新」（绿）/「待更新」（蓝）</td></tr><tr><td>④</td><td>收藏星标</td><td>个人快捷关注，不影响他人视图</td><td>点击切换收藏</td></tr><tr><td>⑤</td><td>操作「编辑」</td><td>允许改分类与名称，禁止改 ID，保证下游引用稳定</td><td>打开编辑弹窗（§1.1）；点击编辑不进入数据预览</td></tr><tr><td>⑥</td><td>选中目录</td><td>绑定/登记后目录计数与列表范围一致</td><td>角标随绑定/登记变化；指标挂在所选路径（含多级叶子）</td></tr></tbody></table>
+<h3>1.1 编辑指标弹窗</h3>
+<div class="card"><div class="shot"><img src="prd-screenshots/12-edit-ind-modal.png" alt="编辑指标"><div class="cap"><span>编辑指标</span><span>点击图片可放大</span></div></div></div>
+<table class="src-table"><thead><tr><th>编号</th><th>区域</th><th>需求说明</th><th>交互说明</th></tr></thead><tbody><tr><td>①</td><td>入口</td><td>列表与树两处可改元数据，减少上下文切换</td><td>列表操作列「编辑」或树叶子行编辑图标</td></tr><tr><td>②</td><td>标题栏</td><td>明确当前为编辑态，与新增/登记区分</td><td>实心蓝底「编辑指标」</td></tr><tr><td>③</td><td>所属分类</td><td>支持最多 6 级目录迁移；路径可读、可选叶子</td><td>级联多列展开；触发器展示 <code>原油 / 价格</code>；选叶子收起；弹层限宽高、列内滚动</td></tr><tr><td>④</td><td>指标 ID</td><td><b>全局稳定主键，禁止修改</b>，避免绑定/任务/下游断链</td><td>置灰只读（灰度禁用）</td></tr><tr><td>⑤</td><td>指标名称</td><td>业务可读名；同数据源内唯一，避免重名混淆</td><td>必填；同数据源不可重复</td></tr><tr><td>⑥</td><td>保存 / 取消</td><td>保存仅落库分类与名称；取消不产生副作用</td><td>保存后刷新；取消或 Esc 关闭不落库</td></tr></tbody></table>
+<hr>
+<h2 id="s-2">2. 数据预览</h2>
+<div class="card"><div class="shot"><img src="prd-screenshots/01c-gl-preview.png" alt="数据预览"><div class="cap"><span>数据预览</span><span>点击图片可放大</span></div></div></div>
+<table class="src-table"><thead><tr><th>编号</th><th>区域</th><th>需求说明</th><th>交互说明</th></tr></thead><tbody><tr><td>①</td><td>「数据预览」页签</td><td>在配置页内核验时序质量，无需跳转外部工具</td><td>切换后右侧改为时序预览（非列表）</td></tr><tr><td>②</td><td>指标头信息</td><td>确认当前预览对象的身份与口径（频度/单位）</td><td>展示名称、指标ID、频度、单位、更新时间</td></tr><tr><td>③</td><td>时序表</td><td>按日期查看数值，支撑抽样核对</td><td>日期 × 值；随当前选中指标加载</td></tr><tr><td>④</td><td>底部频度条</td><td>同一指标可能多频度序列，需按频度切换查看</td><td>周/季/年/日/月；切换后重载序列</td></tr><tr><td>⑤</td><td>空目录</td><td>无指标时不应展示伪数据</td><td>引导回登记/绑定，不展示有效序列</td></tr></tbody></table>
+<hr>
+<h2 id="s-3">3. 任务调度</h2>
+<div class="card"><div class="shot"><img src="prd-screenshots/06-task-modal.png" alt="任务调度底部抽屉"><div class="cap"><span>任务调度底部抽屉</span><span>点击图片可放大</span></div></div></div>
+<table class="src-table"><thead><tr><th>编号</th><th>区域</th><th>需求说明</th><th>交互说明</th></tr></thead><tbody><tr><td>①</td><td>入口「任务调度」</td><td>按数据源管理自动同步任务；三源（钢联 / 同花顺 / SMM）共用同一套 UI</td><td>打开<b>底部抽屉</b>（约 90% 屏高），背景模糊；Esc / ✕ /「关闭」退出</td></tr><tr><td>②</td><td>搜索</td><td>任务量大时按名称/指标定位</td><td>支持任务名称 / 指标ID / 指标名称 / 调度文案 / 触发方式</td></tr><tr><td>③</td><td>筛选按钮组</td><td>频度、配置、触发、时间、状态需可组合过滤</td><td><b>调度分类</b>、<b>执行时间</b>、<b>配置状态</b>（已配置/未配置）、<b>触发方式</b>（系统默认调度 / 自动调度）、<b>状态</b>（已启动/已暂停/上次成功/失败）</td></tr><tr><td>④</td><td>任务行</td><td>运维识别任务、配置与触发方式、责任人</td><td>名称 <code>{目录}·{频度}同步</code>；调度分类、关联指标、调度时间、<b>配置状态</b>、<b>触发方式</b>、上次执行、结果、状态、修改人、操作</td></tr><tr><td>⑤</td><td>调度时间</td><td>未配置走系统默认；已配置可可视化改排期</td><td>未配置显示「<b>按照系统调度执行</b>」；点击文案或编辑图标 → 配置弹层；保存后变为已配置，触发方式为<b>自动调度</b></td></tr><tr><td>⑥</td><td>触发方式</td><td>仅区分系统默认与自定义自动调度，不另设「手动执行」态</td><td><b>系统默认调度</b>（未配置）/ <b>自动调度</b>（已配置）；立即执行不改变该字段枚举</td></tr><tr><td>⑦</td><td>执行结果</td><td>失败需可辨识，驱动排查</td><td>成功绿 / 失败红；失败行可浅红底；未配置结果为「—」</td></tr><tr><td>⑧</td><td>状态</td><td>控制是否参与自动调度</td><td><b>仅开关</b>，无右侧文案；未配置/执行中禁用；悬浮 tip 提示启动/暂停</td></tr><tr><td>⑨</td><td>操作</td><td>编辑配置、补跑与查日志；图标节省列宽</td><td><b>编辑</b>（未配置橙笔 / 已配置蓝笔+勾）→ 打开配置；<b>立即执行 / 暂停</b>同一位置：空闲显示立即执行，执行中切换为暂停；<b>执行日志</b>；未配置/未启动不可立即执行</td></tr><tr><td>⑩</td><td>执行日志</td><td>回溯近期执行与配置变更</td><td>点关联指标名或日志图标 → <b>居中弹窗表</b>；见下</td></tr><tr><td>⑪</td><td>关闭</td><td>浏览或操作后退出</td><td>✕ 或「关闭」；日志 / 配置弹层打开时 Esc 先关上层</td></tr></tbody></table>
+<div class="card"><div class="shot"><img src="prd-screenshots/06b-task-sched-config.png" alt="配置调度时间 · 基础配置"><div class="cap"><span>配置调度时间 · 基础配置</span><span>点击图片可放大</span></div></div></div>
+<table class="src-table"><thead><tr><th>编号</th><th>区域</th><th>需求说明</th><th>交互说明</th></tr></thead><tbody><tr><td>A</td><td>Tab</td><td>对齐有数 BI：简单排期与规则分离</td><td><b>基础配置</b> / <b>高级配置</b>；默认进基础</td></tr><tr><td>B</td><td>执行频率</td><td>对应常见周期</td><td>下拉：每天 / 每周 / 每旬 / 每月 / 每季 / 每半年 / 每年</td></tr><tr><td>C</td><td>星期 / 日期 / 月份</td><td>按频率下拉多选</td><td>每周：多选星期；<b>每旬</b>：下拉多选 1–30 日；<b>每月</b>：下拉多选 1–31 日/月末；<b>每季</b>：季度月（季初/季中/季末联动）+ 日期多选；<b>每半年/每年</b>：月份 + 日期多选</td></tr><tr><td>D</td><td>执行时间</td><td>到点触发；支持同日多时刻</td><td>可添加多个 <code>HH:mm</code>，数量不限</td></tr><tr><td>E</td><td>调度预览</td><td>可读懂</td><td>实时文案；保存写回列表与日志（修改人记当前用户）</td></tr></tbody></table>
+<div class="card"><div class="shot"><img src="prd-screenshots/06b2-task-sched-advanced.png" alt="配置调度时间 · 高级配置"><div class="cap"><span>配置调度时间 · 高级配置</span><span>点击图片可放大</span></div></div></div>
+<table class="src-table"><thead><tr><th>编号</th><th>区域</th><th>需求说明</th><th>交互说明</th></tr></thead><tbody><tr><td>F</td><td>规则配置</td><td>到点之外再加执行条件</td><td>开关启用；条件：无条件 / 数据有更新 / 自定义；可填规则说明</td></tr><tr><td>G</td><td>失败重跑</td><td>失败后自动补跑，避免偶发失败丢同步</td><td>默认开启：重跑 <b>3</b> 次、间隔 <b>5</b> 分钟；可改次数与间隔，可关闭</td></tr><tr><td>H</td><td>Cron</td><td>给运维/高级用户直接改表达式</td><td>默认由基础配置生成；手动改写后保留</td></tr><tr><td>I</td><td>高级预览</td><td>确认规则与重跑策略</td><td>拼接规则状态与「失败重跑 n 次，间隔 m 分钟」</td></tr></tbody></table>
+<div class="card"><div class="shot"><img src="prd-screenshots/06c-task-logs.png" alt="任务日志"><div class="cap"><span>任务日志</span><span>点击图片可放大</span></div></div></div>
+<table class="src-table"><thead><tr><th>编号</th><th>区域</th><th>需求说明</th><th>交互说明</th></tr></thead><tbody><tr><td>L1</td><td>入口</td><td>从任务或指标维度查看执行轨迹</td><td>点击关联指标名，或操作列「执行日志」图标</td></tr><tr><td>L2</td><td>容器</td><td>明细表需居中可读，避免侧栏过窄</td><td><b>居中弹窗</b>（非侧栏）</td></tr><tr><td>L3</td><td>日志列</td><td>覆盖执行时点、成败与触发来源</td><td>序号、<b>执行时间</b>（<code>yyyy-mm-dd HH:mm:ss</code>）、<b>触发方式</b>、是否成功、耗时、备注；失败标红</td></tr></tbody></table>
+<p><b>触发方式枚举（任务列表 / 筛选）：</b> <code>系统默认调度</code> | <code>自动调度</code>（不含手动执行）。  <br><b>默认定时（产品约定 · 基础配置）：</b> 日 08:00 · 周一 07:00 · 每旬 09:00 · 月 1 日 08:30 · 每季/半年/年 08:00。  <br><b>默认失败重跑：</b> 3 次，间隔 5 分钟。</p>
+<hr>
+<h2 id="s-4">4. 指标登记注册</h2>
+<h3>4.1 方式选择</h3>
+<div class="card"><div class="shot"><img src="prd-screenshots/07-reg-choice.png" alt="登记方式选择"><div class="cap"><span>登记方式选择</span><span>点击图片可放大</span></div></div></div>
+<table class="src-table"><thead><tr><th>编号</th><th>区域</th><th>需求说明</th><th>交互说明</th></tr></thead><tbody><tr><td>①</td><td>入口「指标登记注册」</td><td>已知厂商 ID 时登记入库，与「目录绑定」互补</td><td>先弹方式选择，不直接进表单</td></tr><tr><td>②</td><td>录入登记注册</td><td>适合少量、已知 ID 的快速登记</td><td>进入表单 §4.2</td></tr><tr><td>③</td><td>Excel导入注册</td><td>适合批量清单一次性注册</td><td>进入模板上传 §4.3</td></tr><tr><td>④</td><td>数据登记注册 Excel 模板</td><td>先下载模板填写，再导入，降低字段错误</td><td>入口说明区蓝链下载 <code>数据登记注册模板.xlsx</code>；与 §4.3 下载同源</td></tr><tr><td>⑤</td><td>取消 / ✕</td><td>未选择方式不产生数据</td><td>关闭，不落库</td></tr></tbody></table>
+<h3>4.2 录入登记</h3>
+<div class="card"><div class="shot"><img src="prd-screenshots/08-reg-form.png" alt="录入登记"><div class="cap"><span>录入登记</span><span>点击图片可放大</span></div></div></div>
+<table class="src-table"><thead><tr><th>编号</th><th>区域</th><th>需求说明</th><th>交互说明</th></tr></thead><tbody><tr><td>①</td><td>行字段</td><td>一条登记至少含 ID、目录、来源，才能进入后续调度/消费</td><td>指标ID（必填）、所属目录、指标来源</td></tr><tr><td>②</td><td>所属目录</td><td>必须落到平台目录叶子（或约定可挂节点）；支持深路径</td><td><b>级联选择器</b>（默认当前叶子）；触发器展示 <code>黑色建材 / 螺纹钢</code></td></tr><tr><td>③</td><td>指标来源</td><td>来源决定更新方式：厂商→定时(RPA)，手工→手动</td><td>下拉钢联/同花顺/SMM/手工并映射更新方式</td></tr><tr><td>④</td><td>删除行</td><td>允许修正误填行</td><td>去掉当前行</td></tr><tr><td>⑤</td><td>+ 添加一行</td><td>一次提交多条，提高录入效率</td><td>每行独立级联目录</td></tr><tr><td>⑥</td><td>保存登记</td><td>同 ID 禁止静默覆盖，保证数据完整性</td><td>写入当前源指标库；冲突提示</td></tr><tr><td>⑦</td><td>取消</td><td>放弃本次录入</td><td>关闭不保存</td></tr></tbody></table>
+<h3>4.3 Excel 导入注册</h3>
+<div class="card"><div class="shot"><img src="prd-screenshots/10-excel-reg.png" alt="Excel导入注册"><div class="cap"><span>Excel导入注册</span><span>点击图片可放大</span></div></div></div>
+<table class="src-table"><thead><tr><th>编号</th><th>区域</th><th>需求说明</th><th>交互说明</th></tr></thead><tbody><tr><td>①</td><td>说明条</td><td>明确模板字段，降低导入失败率</td><td>指标ID / 名称 / 目录 / 单位 / 频度 / 来源</td></tr><tr><td>②</td><td>上传区</td><td>仅接受约定模板结构的 <code>.xlsx</code></td><td>点击或拖拽上传；须先下载模板</td></tr><tr><td>③</td><td>下载数据登记注册 Excel 模板</td><td>标准模板是批量注册前置条件</td><td>蓝链「下载数据登记注册 Excel 模板」→ <code>数据登记注册模板.xlsx</code></td></tr><tr><td>④</td><td>确认注册</td><td>预览后入库；空模板不允许；失败可追溯</td><td>解析预览后批量入库；正式版支持失败导出</td></tr><tr><td>⑤</td><td>取消</td><td>放弃本次导入</td><td>关闭</td></tr></tbody></table>
+<hr>
+<h2 id="s-5">5. 目录绑定（两步）</h2>
+<h3>5.1 步骤1 · 选择指标</h3>
+<div class="card"><div class="shot"><img src="prd-screenshots/09-bind-step1.png" alt="目录绑定-步骤1"><div class="cap"><span>目录绑定-步骤1</span><span>点击图片可放大</span></div></div></div>
+<table class="src-table"><thead><tr><th>编号</th><th>区域</th><th>需求说明</th><th>交互说明</th></tr></thead><tbody><tr><td>①</td><td>入口「目录绑定」</td><td>从厂商可选池挑选指标挂到平台目录，形成可消费资产</td><td>打开两步绑定流程</td></tr><tr><td>②</td><td>步骤条</td><td>分步降低一次勾选并改元数据的出错率</td><td>1 选择指标 → 2 确认绑定</td></tr><tr><td>③</td><td>筛选</td><td>在大池中按目录/频度/关键词缩小候选</td><td>目录、频度、关键词；「列表全选」；「已选: N」</td></tr><tr><td>④</td><td>可选池表格</td><td>勾选前需看到关键行情字段以便判断</td><td>指标ID、名称、最新日期、最新值、频度、单位</td></tr><tr><td>⑤</td><td>下一步</td><td>至少 1 条才进入确认，避免空绑定</td><td>未选可 Toast</td></tr><tr><td>⑥</td><td>取消</td><td>中途退出不落库</td><td>关闭</td></tr></tbody></table>
+<h3>5.2 步骤2 · 确认绑定</h3>
+<div class="card"><div class="shot"><img src="prd-screenshots/09b-bind-step2.png" alt="目录绑定-步骤2"><div class="cap"><span>目录绑定-步骤2</span><span>点击图片可放大</span></div></div></div>
+<table class="src-table"><thead><tr><th>编号</th><th>区域</th><th>需求说明</th><th>交互说明</th></tr></thead><tbody><tr><td>①</td><td>步骤条</td><td>明确当前处于确认态</td><td>高亮「确认绑定」</td></tr><tr><td>②</td><td>可编辑字段</td><td>绑定时允许校正展示名/单位/频度；ID 不可改</td><td>名称、单位、频度可改；指标ID 只读</td></tr><tr><td>③</td><td>目录策略</td><td>支持逐条分目录或整批同目录；目标须合法叶子路径</td><td>「分目录 / 同目录」+ <b>级联</b>；表格内 portal 防裁切</td></tr><tr><td>④</td><td>上一步</td><td>可回退改选，保留已选集合</td><td>回勾选页</td></tr><tr><td>⑤</td><td>确认绑定</td><td>写入目标目录并刷新计数，指标进入列表/任务体系</td><td>确认后刷新树与列表</td></tr></tbody></table>
+<h3>5.3 批量移动指标</h3>
+<div class="card"><div class="shot"><img src="prd-screenshots/14-batch-move-cascader.png" alt="批量移动-级联"><div class="cap"><span>批量移动-级联</span><span>点击图片可放大</span></div></div></div>
+<table class="src-table"><thead><tr><th>编号</th><th>区域</th><th>需求说明</th><th>交互说明</th></tr></thead><tbody><tr><td>①</td><td>入口</td><td>目录重组时批量改挂，避免逐条拖拽</td><td>底部「批量移动指标」（需已选有指标目录）</td></tr><tr><td>②</td><td>来源目录 / 已选</td><td>明确移动范围，支持部分勾选</td><td>展示来源路径；勾选列表；「全选」</td></tr><tr><td>③</td><td>移动到</td><td>目标目录用级联选择，支持跨级迁移</td><td>级联选目标；未选不可确认</td></tr><tr><td>④</td><td>确认移动</td><td>批量更新 <code>dir</code> 并保持计数一致；拖拽为补充手段</td><td>确认后刷新；亦支持拖拽到树</td></tr><tr><td>⑤</td><td>取消 / ✕</td><td>不落库退出</td><td>关闭</td></tr></tbody></table>
+<hr>
+<h2 id="s-6">6. 同花顺 / SMM 差异批注</h2>
+<p>三源共用同一套需求与交互（§1～§5），差异主要在<b>目录树内容与厂商标签</b>。</p>
+<h3>6.1 同花顺</h3>
+<div class="card"><div class="shot"><img src="prd-screenshots/02-ths-config.png" alt="同花顺配置"><div class="cap"><span>同花顺配置</span><span>点击图片可放大</span></div></div></div>
+<table class="src-table"><thead><tr><th>编号</th><th>区域</th><th>需求说明</th><th>交互说明</th></tr></thead><tbody><tr><td>①</td><td>侧栏「同花顺」</td><td>金融市场源独立配置上下文</td><td>面包屑：<code>数据源 / 同花顺配置</code></td></tr><tr><td>②</td><td>目录</td><td>覆盖行情 / 财务 / 宏观分类</td><td>行情（股票/基金）、财务指标、宏观数据</td></tr><tr><td>③</td><td>典型指标</td><td>以价量、估值、市值类指标为主</td><td>收盘价、成交量、PE/PB、总市值、换手率等</td></tr><tr><td>④</td><td>来源表现</td><td>导出与对接标签为 iFinD</td><td>列表可见 RPA/手工；导出标签 <b>iFinD</b></td></tr><tr><td>⑤</td><td>主操作</td><td>与钢联能力对齐</td><td>任务调度 / 登记 / 绑定</td></tr></tbody></table>
+<h3>6.2 SMM</h3>
+<div class="card"><div class="shot"><img src="prd-screenshots/03-smm-config.png" alt="SMM配置"><div class="cap"><span>SMM配置</span><span>点击图片可放大</span></div></div></div>
+<table class="src-table"><thead><tr><th>编号</th><th>区域</th><th>需求说明</th><th>交互说明</th></tr></thead><tbody><tr><td>①</td><td>侧栏「SMM」</td><td>有色与新能源行业源独立配置</td><td>面包屑：<code>数据源 / SMM配置</code></td></tr><tr><td>②</td><td>目录</td><td>覆盖有色、基本金属、新能源</td><td>沪铜/沪锌、基本金属、碳酸锂等</td></tr><tr><td>③</td><td>典型指标</td><td>以现货、升贴水、库存为主</td><td>现货价、升贴水、库存等</td></tr><tr><td>④</td><td>导出标签</td><td>对接标签为 Smm</td><td>导出 <b>Smm</b></td></tr><tr><td>⑤</td><td>收藏</td><td>默认不强制收藏</td><td>用户可手动星标</td></tr></tbody></table>
+<hr>
+<h2 id="s-7">7. 手工录入数据</h2>
+<div class="card"><div class="shot"><img src="prd-screenshots/04-manual-embedded.png" alt="手工录入主界面"><div class="cap"><span>手工录入主界面</span><span>点击图片可放大</span></div></div></div>
+<table class="src-table"><thead><tr><th>编号</th><th>区域</th><th>需求说明</th><th>交互说明</th></tr></thead><tbody><tr><td>①</td><td>入口</td><td>厂商未覆盖或需人工维护的数据入口；嵌入数据源菜单，不整页跳转</td><td>侧栏「手工录入数据」；面包屑 <code>数据源 / 手工录入数据</code>（iframe）</td></tr><tr><td>②</td><td>导入数据</td><td>Excel 是主补数通道，需模板化与失败可追溯</td><td>打开导入弹窗（§7.1）</td></tr><tr><td>③</td><td>批量加入指标库</td><td>手工库与指标中心解耦；确认后才进入下游消费</td><td><b>两步弹窗</b>对齐目录绑定；来源标记「手工」；列表勾选可预选</td></tr><tr><td>④</td><td>批量删除</td><td>清理误导入/废弃指标</td><td>未勾选禁用</td></tr><tr><td>⑤</td><td>右侧工具栏</td><td>主操作集中；导出走工具栏，不做行内下载</td><td>导入 / 批量加入 / 批量删除 / 导出靠右；无表头「只看我的」；无单行下载</td></tr><tr><td>⑥</td><td>目录树</td><td>与指标中心目录对齐；「只看我的」在目录区</td><td>顶满左侧；可添加一级、搜索、展开</td></tr><tr><td>⑦</td><td>指标列表区</td><td>展示手工点位聚合后的指标摘要</td><td>勾选、ID、名称、目录、单位、创建人、最新日期、最新值；空态「暂无数据」</td></tr><tr><td>⑧</td><td>分页</td><td>大数据量分页加载</td><td>底部分页与跳转</td></tr></tbody></table>
+<h3>7.0a 批量加入 · 步骤2（级联目录）</h3>
+<div class="card"><div class="shot"><img src="prd-screenshots/15-manual-lib-cascader.png" alt="手工批量加入-级联"><div class="cap"><span>手工批量加入-级联</span><span>点击图片可放大</span></div></div></div>
+<table class="src-table"><thead><tr><th>编号</th><th>区域</th><th>需求说明</th><th>交互说明</th></tr></thead><tbody><tr><td>①</td><td>步骤条</td><td>与三源绑定一致的两步确认</td><td>高亮「确认加入」</td></tr><tr><td>②</td><td>可编辑字段</td><td>加入前可校正展示口径</td><td>名称 / 单位 / 频度</td></tr><tr><td>③</td><td>目录策略</td><td>必须明确指标中心落点目录；iframe 内级联不可裁切</td><td>「分目录 / 同目录」+ <b>级联</b></td></tr><tr><td>④</td><td>确认加入</td><td>写入指标中心（来源=手工）并回写手工库；已加入不再出现在可选池</td><td>Toast 提示条数与目标</td></tr></tbody></table>
+<h3>7.1 导入数据弹窗</h3>
+<div class="card"><div class="shot"><img src="prd-screenshots/11-manual-import.png" alt="手工导入"><div class="cap"><span>手工导入</span><span>点击图片可放大</span></div></div></div>
+<table class="src-table"><thead><tr><th>编号</th><th>区域</th><th>需求说明</th><th>交互说明</th></tr></thead><tbody><tr><td>①</td><td>「导入数据」上传（置顶）</td><td>主操作优先；解析后进独立预览，避免在上传弹窗内嵌复杂表</td><td>上传已填模板 → 打开「导入预览」</td></tr><tr><td>②</td><td>步骤说明</td><td>标准化导入路径，降低培训成本</td><td>上传 → 预览确认 → 失败可下失败列表</td></tr><tr><td>③</td><td>下载模板1 / 模板2（下方）</td><td>提供行式与宽表两种模板适配不同填报习惯</td><td>模板区置底；可「查看大图」</td></tr><tr><td>④</td><td>导入失败列表</td><td>失败行可下载含备注，支撑修正重传</td><td>链接触发下载</td></tr><tr><td>⑤</td><td>关闭 ✕</td><td>关闭上传入口</td><td>关闭弹窗</td></tr></tbody></table>
+<h3>7.2 导入预览弹窗（独立）</h3>
+<table class="src-table"><thead><tr><th>编号</th><th>区域</th><th>需求说明</th><th>交互说明</th></tr></thead><tbody><tr><td>①</td><td>标题「导入预览」</td><td>确认态与上传态分离，降低误导入</td><td>解析成功后切换至此</td></tr><tr><td>②</td><td>文件摘要</td><td>导入前感知规模</td><td>文件名、条数、指标数</td></tr><tr><td>③</td><td>预览表</td><td>抽查字段正确性</td><td>品种 / 名称 / 日期 / 值 / 单位</td></tr><tr><td>④</td><td>确认导入</td><td>写入库并反馈成败</td><td>结果在顶部；失败可下失败列表</td></tr><tr><td>⑤</td><td>取消 / 完成</td><td>取消放弃；完成关闭</td><td>对应按钮</td></tr></tbody></table>
+<p><b>校验要点（导入/在线录入共用）：</b> 品种或目录、名称、日期（<code>YYYY-MM-DD</code>）、数值、频度、单位均必填；同名多日点位聚合为一条指标；品种「宏观」映射到「中国宏观」。</p>
+<hr>
+<h2 id="s-8">8. 目录治理（三源与手工共用规则）</h2>
+<table class="src-table"><thead><tr><th>操作</th><th>需求说明</th><th>交互说明</th></tr></thead><tbody><tr><td>展开/收起</td><td>控制树信息密度</td><td>点击节点箭头</td></tr><tr><td>选中</td><td>决定右侧列表/预览范围</td><td>点击节点刷新右侧</td></tr><tr><td>深度</td><td><b>最多 6 级</b>，防止无限嵌套</td><td>第 6 级隐藏「＋」；再下挂 Toast 拦截</td></tr><tr><td>添加一级</td><td>根分类由底部入口创建</td><td>弹窗输入名称（建议 ≤20 字）</td></tr><tr><td>添加子目录</td><td>子级就地创建，路径 <code>父/子</code></td><td>悬停「＋」（操作区左侧）→ 命名</td></tr><tr><td>重命名</td><td>改名需同步指标 <code>dir</code>，防孤儿路径</td><td>行「编辑」保存后同步</td></tr><tr><td>删除</td><td>有指标时禁止删除，防误删资产</td><td>确认弹窗；有指标隐藏「删除」</td></tr><tr><td>拖拽 / 批量移动</td><td>支持重组挂载关系</td><td>拖拽或批量移动弹窗（级联目标）</td></tr><tr><td>折叠面板</td><td>扩大列表可视区</td><td>收起左侧目录区</td></tr></tbody></table>
+<p><b>级联选择器（共用）：</b></p>
+<table class="src-table"><thead><tr><th>规则</th><th>需求说明</th><th>交互说明</th></tr></thead><tbody><tr><td>展开</td><td>深目录需多列浏览</td><td>点击触发器；有子级箭头；叶子可勾选</td></tr><tr><td>展示</td><td>路径可读、可回写</td><td>触发器 <code>一级 / 二级 / …</code>；隐藏域完整路径</td></tr><tr><td>尺寸</td><td>防弹窗被撑破</td><td>限最大宽高，列内滚动</td></tr><tr><td>层级</td><td>与目录 ≤6 级一致</td><td>不提供超限节点</td></tr><tr><td>裁切</td><td>表格/iframe 内必须可选</td><td>portal 到 <code>body</code></td></tr><tr><td>Esc</td><td>分层关闭，避免误关弹窗</td><td>先收级联，再关弹窗</td></tr></tbody></table>
+<p><b>删除目录确认弹窗：</b></p>
+<div class="card"><div class="shot"><img src="prd-screenshots/13-del-dir-modal.png" alt="删除目录"><div class="cap"><span>删除目录</span><span>点击图片可放大</span></div></div></div>
+<table class="src-table"><thead><tr><th>情况</th><th>需求说明</th><th>交互</th></tr></thead><tbody><tr><td>空目录</td><td>允许删除空结构</td><td>文案确认后可点「删除」</td></tr><tr><td>目录下仍有指标</td><td><b>禁止删除</b>，须先移出或删指标</td><td>提示原因；<b>隐藏「删除」</b>，仅可取消/关闭</td></tr></tbody></table>
+<hr>
+<h2 id="s-9">9. 端到端路径（批注速查）</h2>
+<p><b>A. 钢联日度价自动入库</b>  <br>侧栏上海钢联 → 选 <code>黑色建材/螺纹钢</code> → 目录绑定勾选指标 → 确认单位/频度 → 任务调度开启「黑色建材·日度同步」→ 预览/指标中心消费。</p>
+<p><b>B. 同花顺已知 ID 登记</b>  <br>同花顺配置 → 指标登记注册 → 录入登记 → 填 ID/目录/来源=同花顺数据 → 保存 → 纳入对应频度任务。</p>
+<p><b>C. 手工补宏观</b>  <br>手工录入 → 导入数据 → 下模板1 → 填品种=宏观等 → 上传确认 → 失败下失败列表 → 批量加入指标库（两步确认目录）→ 指标中心可消费。</p>
+<hr>
+<h2 id="s-10">10. 验收清单（对照原型）</h2>
+<p><b>三源</b></p>
+<ul><li>四入口切换正确，面包屑正确  </li><li>目录最多 6 级；悬停显示「＋」与行内操作；第 6 级无「＋」  </li><li>有指标时删目录走确认弹窗且不可删除；空目录可确认删除  </li><li>列表/树可编辑指标：级联分类 + 名称可改；指标 ID 置灰不可改  </li><li>登记行所属目录为级联；厂商来源→定时更新；手工→手动更新  </li><li>Excel 注册需模板，空模板不可导入；登记入口可下载「数据登记注册 Excel 模板」  </li><li>目录绑定两步可前进/后退；步骤2目标目录为级联且面板不被裁切  </li><li>批量移动：勾选指标 + 级联选目标目录后可确认移动  </li><li>任务调度为底部 90% 抽屉 + 背景模糊；三源共用  </li><li>筛选含：调度分类 / 执行时间 / 配置状态 / 触发方式 / 状态，可组合过滤  </li><li>触发方式仅「系统默认调度」「自动调度」两种；无「手动执行」  </li><li>未配置任务调度时间文案为「按照系统调度执行」；保存配置后变为自动调度  </li><li>状态列仅开关、无右侧文案；操作列为编辑 + 立即执行/暂停同位切换 + 日志  </li><li>编辑可设每天/周/旬/月等；每周多选星期；旬/季/半年/年不选具体日期；高级含失败重跑  </li><li>执行日志为居中弹窗明细表  </li><li>数据预览随频度切换  </li><li>批注文档每区域具备需求说明 + 交互说明  </li></ul>
+<p><b>手工</b></p>
+<ul><li>导入弹窗：上传置顶、模板置底；解析后进独立预览弹窗确认  </li><li>模板1/2 可下载；空模板不可导入  </li><li>失败可下失败列表  </li><li>「宏观」→ 中国宏观  </li><li>批量加入指标库为两步弹窗（选指标 → 级联确认目录），与三源目录绑定一致  </li><li>iframe 内级联面板可见、不被裁切  </li><li>列表无单行「下载」列；导出走工具栏  </li></ul>
+<hr>
+<h2 id="s-11">11. 截图索引</h2>
+<table class="src-table"><thead><tr><th>文件</th><th>内容</th></tr></thead><tbody><tr><td><code>01-gl-config.png</code></td><td>钢联配置（空目录）</td></tr><tr><td><code>01b-gl-leaf.png</code></td><td>钢联叶子目录列表</td></tr><tr><td><code>01c-gl-preview.png</code></td><td>数据预览</td></tr><tr><td><code>02-ths-config.png</code></td><td>同花顺配置</td></tr><tr><td><code>03-smm-config.png</code></td><td>SMM 配置</td></tr><tr><td><code>04-manual-embedded.png</code></td><td>手工录入主界面</td></tr><tr><td><code>06-task-modal.png</code></td><td>任务调度底部抽屉</td></tr><tr><td><code>06b-task-sched-config.png</code></td><td>配置调度时间 · 基础配置</td></tr><tr><td><code>06b2-task-sched-advanced.png</code></td><td>配置调度时间 · 高级配置（规则）</td></tr><tr><td><code>06c-task-logs.png</code></td><td>任务/指标日志</td></tr><tr><td><code>07-reg-choice.png</code></td><td>登记方式选择</td></tr><tr><td><code>08-reg-form.png</code></td><td>录入登记（级联目录）</td></tr><tr><td><code>09-bind-step1.png</code> / <code>09b-bind-step2.png</code></td><td>目录绑定两步（步骤2含级联）</td></tr><tr><td><code>10-excel-reg.png</code></td><td>Excel 导入注册</td></tr><tr><td><code>11-manual-import.png</code></td><td>手工导入弹窗</td></tr><tr><td><code>12-edit-ind-modal.png</code></td><td>编辑指标（级联分类）</td></tr><tr><td><code>13-del-dir-modal.png</code></td><td>删除目录确认</td></tr><tr><td><code>14-batch-move-cascader.png</code></td><td>批量移动（级联目标目录）</td></tr><tr><td><code>15-manual-lib-cascader.png</code></td><td>手工批量加入步骤2（级联）</td></tr></tbody></table>
+<hr>
+<p><b>文档结束</b>（批注版 V2.0；详细对象模型与校验枚举见 <code>数据源模块-产品需求文档.md</code>）</p>
+</main></body></html>

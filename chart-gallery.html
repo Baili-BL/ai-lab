@@ -1,0 +1,2335 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>图库 · AILab AI指标工坊</title>
+<script src="g2.min.js"></script>
+<style>
+  :root{
+    --primary:#1664FF; --primary-hover:#0E4FE6; --primary-bg:#E8F3FF;
+    --text:#1D2129; --text-2:#4E5969; --text-3:#86909C;
+    --border:#E5E6EB; --border-input:#D9D9E0;
+    --bg:#F2F3F5; --card:#ffffff; --danger:#e34d59; --success:#12b76a;
+    --radius:8px; --radius-lg:12px;
+  }
+  *{margin:0;padding:0;box-sizing:border-box}
+  html,body{height:100%}
+  body{
+    font-family:Roboto,"PingFang SC","Hiragino Sans GB","Microsoft YaHei",sans-serif;
+    background:var(--bg); color:var(--text); font-size:14px; overflow:hidden;
+  }
+  button{font-family:inherit;cursor:pointer}
+  input{font-family:inherit;font-size:13px;color:var(--text)}
+  ::-webkit-scrollbar{width:6px;height:6px}
+  ::-webkit-scrollbar-thumb{background:#d8dbe0;border-radius:3px}
+  ::-webkit-scrollbar-thumb:hover{background:#c4c8cf}
+
+  .btn{
+    height:34px;padding:0 18px;border-radius:6px;border:1px solid var(--border-input);
+    background:#fff;color:var(--text);font-size:13px;transition:all .15s;
+  }
+  .btn:hover{border-color:var(--primary);color:var(--primary)}
+  .btn.primary{background:var(--primary);border-color:var(--primary);color:#fff}
+  .btn.primary:hover{background:var(--primary-hover);color:#fff}
+
+  .app{display:flex;height:100vh;background:var(--bg)}
+  .sidebar{
+    width:196px;background:transparent;border-right:none;
+    display:flex;flex-direction:column;flex-shrink:0;transition:width .2s ease;
+  }
+  .logo{
+    height:56px;display:flex;align-items:center;gap:8px;padding:0 12px;border-bottom:none;
+  }
+  .logo .brand-mark{
+    width:28px;height:28px;border-radius:7px;flex-shrink:0;display:block;object-fit:contain;
+  }
+  .logo .name{font-weight:700;font-size:14px;color:var(--text);letter-spacing:-.02em;white-space:nowrap}
+  .logo .sub{font-size:12px;color:var(--text-3);white-space:nowrap;font-weight:400}
+  .menu{flex:1;overflow-y:auto;padding:8px}
+  .menu-item{
+    width:100%;display:flex;align-items:center;gap:10px;height:40px;padding:0 12px;margin-bottom:4px;
+    border:none;background:none;border-radius:8px;cursor:pointer;font-size:14px;color:var(--text);text-align:left;
+    font-weight:400;line-height:40px;transition:background .15s,color .15s;
+  }
+  .menu-item:hover{background:#e8e9eb;color:var(--text)}
+  .menu-item:active{background:#e8e8f0}
+  .menu-item.active{background:var(--primary-bg);color:var(--primary);font-weight:500}
+  .menu-item .mi-icon{display:flex;flex-shrink:0;align-items:center;justify-content:center;width:15px;height:15px;color:inherit}
+  .menu-item .mi-icon svg{display:block}
+  .menu-item .mi-arrow{margin-left:auto;color:var(--text-3);display:flex;transition:transform .15s}
+  .menu-item.expanded .mi-arrow{transform:rotate(180deg)}
+  .sub-menu{display:none;padding:0 0 4px}
+  .sub-menu.open{display:block}
+  .sub-item{
+    width:100%;display:flex;align-items:center;height:36px;padding:0 12px 0 37px;margin-bottom:2px;
+    border:none;background:none;border-radius:8px;cursor:pointer;font-size:13px;color:var(--text-2);text-align:left;
+    transition:background .15s,color .15s;
+  }
+  .sub-item:hover{background:#e8e9eb;color:var(--text)}
+  .sub-item.active,.sub-item.on{background:var(--primary-bg);color:var(--primary);font-weight:500}
+  .sub-item .sd{display:none}
+
+  .sidebar-foot{
+    flex-shrink:0;padding:8px 12px;
+    display:flex;align-items:center;
+  }
+  .sb-collapse{
+    width:32px;height:32px;border:none;border-radius:6px;background:transparent;
+    color:var(--text-2);display:flex;align-items:center;justify-content:center;padding:0;cursor:pointer;
+  }
+  .sb-collapse:hover{background:#e8e9eb;color:var(--text)}
+  .app.nav-collapsed .sidebar{width:56px;overflow:visible;z-index:40}
+  .app.nav-collapsed .logo{justify-content:center;padding:0 8px}
+  .app.nav-collapsed .logo .name,
+  .app.nav-collapsed .logo .sub{display:none}
+  .app.nav-collapsed .menu{padding:8px 6px;overflow:visible}
+  .app.nav-collapsed .menu-item{
+    justify-content:center;padding:0;gap:0;font-size:0;line-height:0;overflow:visible;position:relative;
+  }
+  .app.nav-collapsed .menu-item .mi-icon{font-size:14px;line-height:1}
+  .app.nav-collapsed .menu-item .mi-arrow,
+  .app.nav-collapsed .sub-menu,
+  .app.nav-collapsed .sub-item .cnt{display:none !important}
+  .app.nav-collapsed .sidebar-foot{justify-content:center;padding:8px;overflow:visible;position:relative}
+  .app.nav-collapsed .sb-collapse{position:relative}
+  .app.nav-collapsed .sb-collapse svg{transform:scaleX(-1)}
+  .app.nav-collapsed .menu-item[data-tip]::after,
+  .app.nav-collapsed .sb-collapse[data-tip]::after{
+    content:attr(data-tip);
+    position:absolute;left:calc(100% + 10px);top:50%;transform:translateY(-50%);
+    background:#fff;color:var(--text);font-size:13px;font-weight:400;line-height:20px;
+    padding:6px 12px;border:1px solid var(--border);border-radius:6px;
+    box-shadow:0 4px 14px rgba(15,23,42,.10);white-space:nowrap;pointer-events:none;
+    opacity:0;visibility:hidden;z-index:80;
+  }
+  .app.nav-collapsed .menu-item[data-tip]::before,
+  .app.nav-collapsed .sb-collapse[data-tip]::before{
+    content:"";position:absolute;left:calc(100% + 5px);top:50%;width:8px;height:8px;
+    background:#fff;border-left:1px solid var(--border);border-bottom:1px solid var(--border);
+    transform:translateY(-50%) rotate(45deg);pointer-events:none;
+    opacity:0;visibility:hidden;z-index:81;
+  }
+  .app.nav-collapsed .menu-item[data-tip]:hover::after,
+  .app.nav-collapsed .menu-item[data-tip]:hover::before,
+  .app.nav-collapsed .sb-collapse[data-tip]:hover::after,
+  .app.nav-collapsed .sb-collapse[data-tip]:hover::before{
+    opacity:1;visibility:visible;
+  }
+
+  .workspace{flex:1;display:flex;flex-direction:column;min-width:0}
+
+  .content,.bench{
+    background:#fff;
+    border-top-left-radius:16px;
+  }
+
+  .topbar{
+    height:52px;background:transparent;border-bottom:none;flex-shrink:0;
+    display:flex;align-items:center;gap:14px;padding:0 20px;
+  }
+  .topbar .crumb{font-size:14px}
+  .topbar .crumb b{font-weight:600}
+  .topbar .crumb .sep{color:var(--text-3);margin:0 8px}
+  .topbar .crumb .cur{color:var(--text);font-weight:500}
+  .topbar-right{margin-left:auto;display:flex;align-items:center;gap:16px}
+  .lang-btn{
+    height:30px;padding:0 14px;border-radius:6px;border:1px solid var(--border-input);
+    background:#fff;font-size:12px;color:var(--text-2);
+  }
+  .bell{border:none;background:none;color:var(--text-2);display:flex;padding:6px;border-radius:6px;position:relative}
+  .bell:hover{background:#f7f7f9}
+  .bell .dot{position:absolute;top:4px;right:5px;width:7px;height:7px;border-radius:50%;background:var(--danger);border:1.5px solid #fff}
+  .user{display:flex;align-items:center;gap:8px;border:none;background:none;padding:4px 6px;border-radius:8px}
+  .user:hover{background:#f7f7f9}
+  .user .avatar{
+    width:30px;height:30px;border-radius:50%;background:#ebebf5;color:var(--primary);
+    display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:600;
+  }
+  .user .uname{font-size:13px;color:var(--text)}
+
+  .content{flex:1;min-height:0;display:flex;padding:16px;gap:14px}
+
+  /* ---------- 左：目录面板（对齐指标中心） ---------- */
+  .dir-panel{
+    width:300px;flex-shrink:0;background:#fff;border:1px solid var(--border);border-radius:var(--radius-lg);
+    padding:16px;display:flex;flex-direction:column;position:relative;max-height:100%;
+    transition:width .2s ease,padding .2s ease,border-color .2s;
+  }
+  .dir-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px}
+  .dir-head h2{font-size:15px}
+  .dir-head .only-mine{display:flex;align-items:center;gap:6px;font-size:12px;color:var(--text-2);cursor:pointer;user-select:none}
+  .dir-head .only-mine input{accent-color:var(--primary)}
+  .dir-search{display:flex;align-items:center;gap:8px;margin-bottom:12px}
+  .dir-search .ds-input{
+    flex:1;min-width:0;display:flex;align-items:center;gap:6px;border:1px solid var(--border-input);
+    border-radius:6px;padding:0 10px;height:32px;background:#fff;
+  }
+  .dir-search .ds-input:focus-within{border-color:var(--primary);box-shadow:0 0 0 2px rgba(82,82,255,.16)}
+  .dir-search .ds-input input{flex:1;border:none;outline:none;height:100%;min-width:0;background:transparent}
+  .dir-search .ds-input svg{color:var(--text-3);flex-shrink:0}
+  .dir-search .exact{
+    display:flex;align-items:center;gap:5px;font-size:12px;color:var(--text-2);
+    white-space:nowrap;cursor:pointer;user-select:none;flex-shrink:0;
+  }
+  .switch{position:relative;display:inline-block;width:34px;height:19px;flex-shrink:0}
+  .switch input{display:none}
+  .switch .sl{
+    position:absolute;inset:0;background:#d4d7de;border-radius:19px;transition:.15s;cursor:pointer;
+  }
+  .switch .sl::after{
+    content:"";position:absolute;top:2px;left:2px;width:15px;height:15px;border-radius:50%;
+    background:#fff;transition:.15s;box-shadow:0 1px 3px rgba(15,23,42,.2);
+  }
+  .switch input:checked + .sl{background:var(--primary)}
+  .switch input:checked + .sl::after{transform:translateX(15px)}
+
+  .dir-tree{flex:1;overflow-y:auto;margin:0 -6px;min-height:0}
+  .dir-item{
+    display:flex;align-items:center;gap:6px;padding:7px 10px;border-radius:6px;font-size:13px;
+    color:var(--text);cursor:pointer;user-select:none;position:relative;
+  }
+  .dir-item:hover{background:#f7f7f9}
+  .dir-item.active{background:var(--primary-bg);color:var(--text);font-weight:500}
+  .dir-item.drop-on{background:#e8e8f5;outline:1.5px dashed var(--primary);outline-offset:-2px}
+  body.is-chart-dragging .dir-item{cursor:copy}
+  .dir-item.dt-leaf{font-size:12.5px;font-weight:400}
+  .dir-item.dt-leaf .di-icon{opacity:.75}
+  .dir-item.dt-leaf[draggable="true"]{cursor:grab}
+  body.is-chart-dragging .dir-item[data-path]{cursor:copy}
+  .dir-item .di-arrow{color:var(--text-3);display:flex;transition:transform .12s;flex:none}
+  .dir-item.open .di-arrow{transform:rotate(90deg)}
+  .dir-item .di-icon{color:var(--text-2);display:flex;flex-shrink:0}
+  .dir-item.active .di-icon{color:var(--text)}
+  .dir-item:not(.dt-leaf) .di-icon{color:unset}
+  .dir-item .di-icon svg{display:block}
+  .dir-item .di-name{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;text-align:left}
+  .dir-item .di-cnt{font-size:11px;color:var(--text-3);flex-shrink:0}
+  .dir-item .di-ops{display:none;align-items:center;gap:2px;margin-left:4px;flex-shrink:0}
+  .dir-item:hover .di-ops,.dir-item.active .di-ops{display:flex}
+  .dir-item:hover .di-cnt,.dir-item.active .di-cnt{display:none}
+  .di-ops button{
+    width:22px;height:22px;border:none;background:transparent;border-radius:4px;
+    color:#5b8def;display:flex;align-items:center;justify-content:center;padding:0;cursor:pointer;
+  }
+  .di-ops button:hover{background:rgba(82,82,255,.16)}
+  .di-ops button.danger{color:#f53f3f}
+  .di-ops button.danger:hover{background:#fdf0f1}
+  .dir-item .di-plus{
+    width:18px;height:18px;border-radius:4px;display:none;align-items:center;justify-content:center;
+    color:var(--text-3);font-size:13px;line-height:1;flex:none;border:none;background:none;padding:0;cursor:pointer;
+  }
+  .dir-item:hover .di-plus,.dir-item.active .di-plus{display:inline-flex}
+  .dir-item .di-plus:hover{background:var(--primary);color:#fff}
+  .dir-children{margin-left:22px;display:none}
+  .dir-children.open{display:block}
+  .dir-foot{border-top:1px solid #f0f1f4;padding-top:10px;margin-top:10px;display:flex;flex-direction:column;gap:2px}
+  .dir-foot button{
+    display:flex;align-items:center;gap:8px;border:none;background:none;padding:7px 10px;border-radius:6px;
+    font-size:13px;color:var(--text);text-align:left;
+  }
+  .dir-foot button:hover{background:#f4f6f9;color:var(--primary)}
+  .dir-toggle{
+    position:absolute;top:50%;right:-13px;transform:translateY(-50%);z-index:30;
+    width:26px;height:26px;border-radius:50%;background:#fff;border:1px solid var(--border);
+    box-shadow:0 2px 8px rgba(15,23,42,.12);color:var(--text-3);
+    display:flex;align-items:center;justify-content:center;cursor:pointer;padding:0;
+  }
+  .dir-toggle:hover{color:var(--primary);border-color:var(--primary)}
+  .dir-toggle svg{transition:transform .2s}
+  .dir-panel.collapsed{width:0;padding:0;border-color:transparent;overflow:visible}
+  .dir-panel.collapsed > *:not(.dir-toggle){display:none}
+  .dir-panel.collapsed .dir-toggle svg{transform:rotate(180deg)}
+
+  /* ---------- 右：图表网格 ---------- */
+  .gallery-panel{
+    flex:1;min-width:0;background:#fff;border:1px solid var(--border);border-radius:var(--radius-lg);
+    display:flex;flex-direction:column;overflow:hidden;
+  }
+  .gal-head{
+    padding:12px 18px;font-size:13px;color:var(--text-2);flex-shrink:0;
+    display:flex;align-items:center;gap:12px;flex-wrap:wrap;border-bottom:1px solid #f0f1f4;
+    position:relative;z-index:20;overflow:visible;
+  }
+  .gal-head .gal-count{flex-shrink:0}
+  .gal-head .gal-count b{color:var(--primary);font-weight:600}
+  .gi-search{
+    margin-left:auto;display:flex;align-items:center;gap:6px;border:1px solid var(--border-input);
+    border-radius:6px;padding:0 10px;height:32px;width:210px;background:#fff;flex-shrink:0;
+  }
+  .gi-search input{flex:1;border:none;outline:none;height:100%;min-width:0;background:transparent}
+  .gi-search svg{color:var(--text-3);flex-shrink:0}
+  .gi-search:focus-within{border-color:var(--primary);box-shadow:0 0 0 2px rgba(82,82,255,.16)}
+  .gal-filters{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+  .gal-head .btn-add-chart{
+    height:34px;padding:0 16px;border:none;border-radius:6px;
+    background:var(--primary);color:#fff;font-size:13px;font-weight:500;
+    display:inline-flex;align-items:center;gap:6px;flex-shrink:0;
+  }
+  .gal-head .btn-add-chart:hover{background:var(--primary-hover)}
+  .gi-date{position:relative;z-index:1}
+  .gi-date.open{z-index:30}
+  .gi-date-btn{
+    display:flex;align-items:center;gap:6px;height:32px;padding:0 11px;border-radius:6px;
+    border:1px solid var(--border-input);background:#fff;font-size:12.5px;color:var(--text-2);
+    white-space:nowrap;transition:all .15s;
+  }
+  .gi-date-btn:hover{border-color:var(--primary);color:var(--primary)}
+  .gi-date-btn svg{color:var(--text-3);flex-shrink:0}
+  .gi-date-btn:hover svg{color:var(--primary)}
+  .gi-date-btn.on{border-color:var(--primary);color:var(--primary);background:var(--primary-bg);font-weight:500}
+  .gi-date-btn.on svg{color:var(--primary)}
+  .gi-date-pop{
+    position:absolute;top:calc(100% + 6px);left:0;right:auto;width:280px;background:#fff;z-index:80;
+    border:1px solid var(--border);border-radius:10px;box-shadow:0 12px 32px rgba(15,23,42,.16);
+    padding:14px;display:none;
+  }
+  .gi-date-pop.show{display:block}
+  .gdp-row{display:flex;align-items:center;gap:10px;margin-bottom:10px}
+  .gdp-row label{font-size:12.5px;color:var(--text-2);width:56px;flex-shrink:0}
+  .gdp-row input{
+    flex:1;min-width:0;height:30px;border:1px solid var(--border-input);border-radius:6px;
+    padding:0 8px;font-size:12.5px;outline:none;background:#fff;color:var(--text);
+  }
+  .gdp-row input:focus{border-color:var(--primary)}
+  .gdp-quick{display:flex;gap:6px;margin:2px 0 12px}
+  .gdp-quick button{
+    flex:1;height:26px;border:1px solid var(--border-input);background:#fff;border-radius:5px;
+    font-size:12px;color:var(--text-2);
+  }
+  .gdp-quick button:hover{border-color:var(--primary);color:var(--primary)}
+  .gdp-actions{display:flex;justify-content:flex-end;gap:8px}
+  .gdp-actions .btn{height:30px;padding:0 14px;font-size:12.5px}
+  .gal-scroll{flex:1;overflow-y:auto;padding:16px 16px 8px;min-height:0;position:relative;z-index:0}
+  /* 固定 4 列，避免 auto-fill 末行留缝 / 卡片被拉宽 */
+  .gal-grid{
+    display:grid;grid-template-columns:repeat(4, minmax(0, 1fr));gap:16px;
+    align-content:start;
+  }
+  @media (max-width:1280px){
+    .gal-grid{grid-template-columns:repeat(3, minmax(0, 1fr))}
+  }
+  @media (max-width:980px){
+    .gal-grid{grid-template-columns:repeat(2, minmax(0, 1fr))}
+  }
+  .chart-card{
+    background:#fff;border:1px solid var(--border);border-radius:10px;overflow:visible;
+    box-shadow:0 1px 2px rgba(15,23,42,.03);transition:box-shadow .15s,border-color .15s;
+    display:flex;flex-direction:column;cursor:pointer;min-width:0;width:100%;
+  }
+  .chart-card:hover{border-color:#d4d4ea;box-shadow:0 8px 22px rgba(15,23,42,.06);z-index:2}
+  .chart-card.dragging{opacity:.45}
+  .cc-title{
+    padding:12px 14px 6px;font-size:13px;font-weight:600;color:var(--text);
+    white-space:nowrap;overflow:hidden;text-overflow:ellipsis;text-align:left;
+    border-radius:10px 10px 0 0;
+  }
+  .cc-preview{
+    height:168px;padding:0;background:#fff;overflow:hidden;position:relative;
+    display:flex;flex-direction:column;
+  }
+  .cc-mini-legend{
+    flex-shrink:0;display:flex;flex-wrap:wrap;align-items:center;justify-content:center;
+    gap:6px 10px;padding:6px 8px 2px;min-height:22px;max-height:40px;overflow:hidden;
+  }
+  .cc-mini-legend:empty{display:none;padding:0;min-height:0}
+  .cc-mini-legend .mlg-item{
+    display:inline-flex;align-items:center;gap:4px;max-width:46%;
+    font-size:10px;line-height:1.2;color:#4E5969;min-width:0;
+  }
+  .cc-mini-legend .mlg-name{
+    overflow:hidden;text-overflow:ellipsis;white-space:nowrap;min-width:0;
+  }
+  .cc-mini-legend .mlg-line{
+    width:22px;height:3px;border:none;border-radius:1px;flex-shrink:0;
+    background:currentColor;
+  }
+  .cc-mini-legend .mlg-sq{
+    width:8px;height:8px;border-radius:1.5px;flex-shrink:0;
+  }
+  .cc-mini-legend .mlg-dot{
+    width:7px;height:7px;border-radius:50%;flex-shrink:0;
+  }
+  .cc-g2{width:100%;flex:1;min-height:0;pointer-events:none}
+  .cc-thumb{
+    width:100%;height:100%;display:block;object-fit:contain;object-position:center;
+    background:#fff;pointer-events:none;
+  }
+  .cc-g2-fallback{
+    height:100%;display:flex;align-items:center;justify-content:center;
+    font-size:12px;color:var(--text-3);
+  }
+  .cc-foot{
+    margin-top:auto;padding:9px 14px;border-top:1px solid #f0f1f4;background:#fafbfc;
+    display:flex;align-items:center;justify-content:space-between;gap:8px;
+    overflow:visible;position:relative;z-index:1;border-radius:0 0 10px 10px;
+  }
+  .cc-date{font-size:12px;color:var(--text-3)}
+  .cc-acts{display:flex;align-items:center;gap:0;flex-shrink:0;overflow:visible}
+  .cc-fav{
+    position:relative;
+    box-sizing:content-box;
+    width:16px;height:16px;padding:4px;margin:0 0 0 16px;
+    border:none;border-radius:4px;background:#fff;
+    color:rgba(0,0,0,.15);
+    display:inline-flex;align-items:center;justify-content:center;
+    cursor:pointer;flex-shrink:0;line-height:0;
+  }
+  .cc-fav:hover{background:rgba(0,0,0,.04);color:rgba(0,0,0,.45)}
+  .cc-fav.on{color:#FAAD14;background:#fff}
+  .cc-fav.on:hover{color:#FFC53D;background:rgba(0,0,0,.04)}
+  .cc-fav svg{width:16px;height:16px;display:block}
+  .cc-fav-tip{
+    position:absolute;left:50%;top:calc(100% + 10px);
+    transform:translateX(-50%);
+    padding:6px 10px;border-radius:6px;
+    background:rgba(0,0,0,.85);color:#fff;
+    font-size:12px;line-height:18px;white-space:nowrap;font-weight:400;
+    opacity:0;visibility:hidden;pointer-events:none;
+    z-index:30;transition:opacity .12s ease;
+  }
+  .cc-fav-tip::before{
+    content:"";
+    position:absolute;left:50%;bottom:100%;
+    transform:translateX(-50%);
+    width:0;height:0;
+    border-left:6px solid transparent;
+    border-right:6px solid transparent;
+    border-bottom:6px solid rgba(0,0,0,.85);
+  }
+  .cc-fav:hover .cc-fav-tip{opacity:1;visibility:visible}
+  .gal-empty{
+    grid-column:1 / -1;padding:80px 20px;text-align:center;color:var(--text-3);font-size:13px;line-height:1.7;
+  }
+  .gal-pager{
+    flex-shrink:0;display:flex;justify-content:flex-end;align-items:center;gap:6px;
+    padding:12px 16px;border-top:1px solid #f0f1f4;background:#fff;font-size:13px;color:var(--text-2);
+  }
+  .gal-pager button{
+    min-width:30px;height:30px;border:1px solid var(--border-input);border-radius:6px;background:#fff;
+    color:var(--text-2);font-size:13px;padding:0 8px;cursor:pointer;
+  }
+  .gal-pager button.cur{background:var(--primary);border-color:var(--primary);color:#fff}
+  .gal-pager button:hover:not(.cur):not(:disabled){border-color:var(--primary);color:var(--primary)}
+  .gal-pager button:disabled{opacity:.45;cursor:not-allowed}
+  .gal-pager .pg-info{margin-right:auto;font-size:12.5px;color:var(--text-3)}
+  .gal-pager .pg-info b{color:var(--primary);font-weight:600}
+
+  .toast{
+    position:fixed;top:24px;left:50%;transform:translateX(-50%) translateY(-16px);
+    background:#fff;color:#1f2329;font-size:13px;padding:11px 16px 11px 14px;border-radius:12px;
+    opacity:0;visibility:hidden;transition:all .2s;z-index:400;display:flex;align-items:center;gap:10px;
+    box-shadow:0 10px 32px rgba(36,48,72,.14);border:1px solid #e8ebf2;max-width:min(480px,92vw);
+  }
+  .toast.show{opacity:1;visibility:visible;transform:translateX(-50%) translateY(0)}
+  .toast .t-ico{
+    width:28px;height:28px;border-radius:50%;display:grid;place-items:center;flex-shrink:0;
+    font-size:14px;background:#eaf0ff;
+  }
+
+  /* 目录增删改弹窗 */
+  .modal-mask{
+    position:fixed;inset:0;background:rgba(36,48,72,.28);z-index:100;
+    display:flex;align-items:center;justify-content:center;
+    opacity:0;visibility:hidden;transition:opacity .18s;backdrop-filter:blur(2px);
+  }
+  .modal-mask.show{opacity:1;visibility:visible}
+  .modal{
+    background:#fff;border-radius:14px;overflow:hidden;display:flex;flex-direction:column;
+    box-shadow:0 18px 48px rgba(36,48,72,.14);max-height:88vh;
+  }
+  .modal-head{
+    min-height:56px;background:linear-gradient(180deg,#f7f9ff 0%,#ffffff 100%);
+    color:var(--text);display:flex;align-items:center;gap:10px;padding:10px 18px;border-bottom:1px solid #eef1f6;
+  }
+  .modal-head .mh-title{font-size:15px;font-weight:600;display:flex;align-items:center;gap:10px}
+  .modal-head .mh-ico{
+    width:30px;height:30px;border-radius:9px;display:grid;place-items:center;flex-shrink:0;
+    background:#eaf0ff;color:var(--primary);
+  }
+  .modal-head .mh-ico.danger{background:#fef0f1;color:#e34d59}
+  .modal-head .mh-x{
+    margin-left:auto;width:30px;height:30px;border:none;background:none;border-radius:8px;color:var(--text-3);cursor:pointer;
+  }
+  .modal-head .mh-x:hover{background:#eef1f6;color:var(--text)}
+  .modal-body{padding:18px 20px;background:#fcfdff}
+  .modal-foot{
+    padding:12px 20px;border-top:1px solid #eef1f6;display:flex;align-items:center;justify-content:center;gap:10px;background:#fff;
+  }
+  .btn.tint{background:var(--primary-bg);border-color:transparent;color:var(--primary)}
+  .btn.tint:hover{background:#e0e0f5}
+  .btn.danger{background:var(--danger);border-color:var(--danger);color:#fff}
+  .btn.danger:hover{background:#c93645;color:#fff}
+  .df-form{display:flex;flex-direction:column;gap:18px;padding:8px 4px 4px}
+  .df-row{display:flex;align-items:center;gap:14px}
+  .df-row > label{width:72px;flex-shrink:0;text-align:right;font-size:13px;color:var(--text)}
+  .df-row > .df-val{flex:1;font-size:13px;color:var(--text);min-height:22px;word-break:break-all}
+  .df-row > input,.df-row > select{
+    flex:1;height:36px;border:1px solid var(--border-input);border-radius:4px;padding:0 12px;
+    font-size:13px;color:var(--text);outline:none;background:#fff;
+  }
+  .df-row > input:focus,.df-row > select:focus{border-color:var(--primary);box-shadow:0 0 0 2px rgba(82,82,255,.16)}
+  .df-note{margin:-4px 0 0 86px;font-size:12px;color:var(--text-3);line-height:1.5}
+  .df-row > label .req{color:var(--danger);margin-right:2px;font-style:normal;font-weight:500}
+
+  /* 保存到图库：盖住全屏图表抽屉 */
+  #saveChartMask{z-index:320}
+  #saveChartMask .modal{overflow:visible}
+  #saveChartMask .modal-body{overflow:visible}
+  .sc-path{position:relative;flex:1;min-width:0}
+  .sc-path-btn{
+    width:100%;height:36px;border:1px solid var(--border-input);border-radius:4px;
+    background:#fff;display:flex;align-items:center;justify-content:space-between;gap:8px;
+    padding:0 10px 0 12px;font-size:13px;color:var(--text);cursor:pointer;text-align:left;
+  }
+  .sc-path-btn:hover{border-color:var(--primary)}
+  .sc-path.open .sc-path-btn{border-color:var(--primary);box-shadow:0 0 0 2px rgba(82,82,255,.16)}
+  .sc-path-btn .sc-path-txt{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .sc-path-btn .sc-path-txt.ph{color:var(--text-3)}
+  .sc-path-btn svg{color:var(--text-3);flex-shrink:0}
+  .sc-path-panel{
+    display:none;position:absolute;top:calc(100% + 4px);left:0;right:0;z-index:12;
+    background:#fff;border:1px solid var(--border);border-radius:8px;
+    box-shadow:0 8px 24px rgba(15,23,42,.12);max-height:280px;overflow-y:auto;padding:4px;
+  }
+  .sc-path.open .sc-path-panel{display:block}
+  .sc-path-item{
+    display:flex;align-items:center;gap:6px;min-height:32px;padding:4px 10px;border-radius:6px;
+    font-size:13px;color:var(--text);cursor:pointer;line-height:1.3;
+  }
+  .sc-path-item:hover{background:#f4f6f9}
+  .sc-path-item.on{background:var(--primary-bg);color:var(--primary);font-weight:500}
+  .sc-path-item .sc-depth{flex:none;width:0}
+
+  /* 批量移动图表 */
+  #batchMask .modal{overflow:visible}
+  #batchMask .modal-body{overflow:visible}
+  .bm-list{max-height:280px;overflow-y:auto;display:flex;flex-direction:column;gap:4px}
+  .bm-row{
+    display:flex;align-items:center;gap:10px;padding:9px 10px;border:1px solid var(--border);
+    border-radius:8px;font-size:13px;color:var(--text);
+  }
+  .bm-row input{accent-color:var(--primary);width:15px;height:15px;flex:none}
+  .bm-row .bm-name{flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .bm-row .bm-dir{color:var(--text-3);font-size:12px;flex:none}
+  .bm-select{
+    display:flex;align-items:center;gap:10px;margin-top:14px;padding-top:14px;border-top:1px solid #f0f1f4;
+  }
+  .bm-select > label{font-size:13px;color:var(--text-2);white-space:nowrap}
+  .bm-summary{font-size:12.5px;color:var(--text-3)}
+  .modal-foot .foot-left{margin-right:auto;font-size:12.5px;color:var(--text-3)}
+
+  /* ---------- 新建图表 · 右侧抽屉（整屏模糊遮罩；面板从侧栏右侧起） ---------- */
+  .builder-drawer-root{
+    position:fixed;inset:0;z-index:260;
+    pointer-events:none;visibility:hidden;
+  }
+  .builder-drawer-root.open{pointer-events:auto;visibility:visible}
+  .builder-drawer-mask{
+    position:absolute;inset:0;
+    background:rgba(15,23,42,.28);
+    backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);
+    opacity:0;transition:opacity .22s ease;
+  }
+  .builder-drawer-root.open .builder-drawer-mask{opacity:1}
+  .builder-drawer{
+    position:absolute;top:0;right:0;bottom:0;left:0;
+    width:100vw;max-width:100%;
+    background:var(--bg);display:flex;flex-direction:column;
+    box-shadow:none;overflow:hidden;
+    opacity:0;transition:opacity .12s ease;
+  }
+  .builder-drawer-root.open .builder-drawer{opacity:1}
+  .builder-drawer-root.open .builder-drawer-mask{opacity:0;pointer-events:none}
+  .builder-drawer-root.fullscreen .builder-drawer-mask{opacity:0;pointer-events:none}
+  .builder-drawer-root.fullscreen .builder-drawer{
+    width:100vw;max-width:100%;left:0;right:0;box-shadow:none;
+  }
+  .builder-drawer iframe{
+    flex:1;width:100%;height:100%;border:0;background:var(--bg);display:block;
+    opacity:0;transition:opacity .16s ease;
+  }
+  .builder-drawer-root.is-ready iframe{opacity:1}
+  .builder-boot{
+    position:absolute;inset:0;z-index:2;background:var(--bg);
+    opacity:1;transition:opacity .12s ease;
+    pointer-events:none;
+  }
+  .builder-drawer-root.is-ready .builder-boot{opacity:0}
+</style>
+</head>
+<body>
+<script src="icons.js"></script>
+<div class="app">
+  <aside class="sidebar">
+    <div class="logo">
+      <img class="brand-mark" src="assets/ailab-mark.png" alt="AILab" width="28" height="28">
+      <span class="name">AILab</span>
+      <span class="sub">AI指标工坊</span>
+    </div>
+    <nav class="menu">
+      <button class="menu-item"><span class="mi-icon"><svg class="i" width="15" height="15" aria-hidden="true"><use href="#i-nav-bi"></use></svg></span>BI看板</button>
+      <button class="menu-item"><span class="mi-icon"><svg class="i" width="15" height="15" aria-hidden="true"><use href="#i-nav-report"></use></svg></span>研报管理<span class="mi-arrow"><svg class="i" width="10" height="10" aria-hidden="true"><use href="#i-caret-down"></use></svg></span></button>
+      <button class="menu-item"><span class="mi-icon"><svg class="i" width="15" height="15" aria-hidden="true"><use href="#i-nav-ppt"></use></svg></span>智能ppt</button>
+      <button class="menu-item active"><span class="mi-icon"><svg class="i" width="15" height="15" aria-hidden="true"><use href="#i-nav-gallery"></use></svg></span>图库</button>
+      <button class="menu-item" onclick="location.href='indicator-center.html'"><span class="mi-icon"><svg class="i" width="15" height="15" aria-hidden="true"><use href="#i-nav-indicator"></use></svg></span>指标中心</button>
+      <button class="menu-item"><span class="mi-icon"><svg class="i" width="15" height="15" aria-hidden="true"><use href="#i-nav-table"></use></svg></span>表格<span class="mi-arrow"><svg class="i" width="10" height="10" aria-hidden="true"><use href="#i-caret-down"></use></svg></span></button>
+      <button class="menu-item" onclick="location.href='data-source.html'"><span class="mi-icon"><svg class="i" width="15" height="15" aria-hidden="true"><use href="#i-nav-datasource"></use></svg></span>数据源<span class="mi-arrow"><svg class="i" width="10" height="10" aria-hidden="true"><use href="#i-caret-down"></use></svg></span></button>
+      <button class="menu-item"><span class="mi-icon"><svg class="i" width="15" height="15" aria-hidden="true"><use href="#i-trend-2"></use></svg></span>预测指标</button>
+      <button class="menu-item"><span class="mi-icon"><svg class="i" width="15" height="15" aria-hidden="true"><use href="#i-nav-link"></use></svg></span>外部链接</button>
+      <button class="menu-item" id="menuDraftsNav" onclick="location.href='drafts.html'"><span class="mi-icon"><svg class="i" width="15" height="15" aria-hidden="true"><use href="#i-nav-draft"></use></svg></span>草稿箱<span class="mi-arrow" id="draftMenuArrow"><svg class="i" width="10" height="10" aria-hidden="true"><use href="#i-caret-down"></use></svg></span></button>
+      <div class="sub-menu" id="draftSubMenu">
+        <button class="sub-item" onclick="location.href='drafts.html'"><span class="sd"></span>全部草稿</button>
+        <button class="sub-item" onclick="location.href='data-source.html?draft=task'"><span class="sd"></span>任务调度</button>
+      </div>
+    </nav>
+    <div class="sidebar-foot">
+      <button type="button" class="sb-collapse" title="收起菜单"><svg class="i" width="16" height="16" aria-hidden="true"><use href="#i-panel-collapse"></use></svg></button>
+    </div>
+  </aside>
+
+  <div class="workspace">
+    <header class="topbar">
+      <div class="crumb"><b>图库</b></div>
+      <div class="topbar-right">
+        <button class="bell" title="通知"><svg class="i" width="17" height="17" aria-hidden="true"><use href="#i-bell"></use></svg><span class="dot"></span></button>
+        <button class="user"><span class="avatar">文</span><span class="uname">吴开文</span><svg class="i" width="10" height="10" aria-hidden="true"><use href="#i-caret-down-2"></use></svg></button>
+      </div>
+    </header>
+
+    <main class="content">
+      <aside class="dir-panel" id="dirPanel">
+        <div class="dir-head">
+          <h2>目录</h2>
+          <label class="only-mine"><input type="checkbox" id="onlyMine">只看我的</label>
+        </div>
+        <div class="dir-search">
+          <div class="ds-input">
+            <svg class="i" width="13" height="13" aria-hidden="true"><use href="#i-search"></use></svg>
+            <input id="chartSearch" placeholder="请输入图表名称/ID" autocomplete="off">
+          </div>
+          <label class="exact">精准匹配
+            <span class="switch"><input type="checkbox" id="chartExact"><span class="sl"></span></span>
+          </label>
+        </div>
+        <div class="dir-tree" id="dirTree"></div>
+        <div class="dir-foot">
+          <button type="button" id="btnAddDir">
+            <svg class="i" width="13" height="13" aria-hidden="true"><use href="#i-plus-14"></use></svg>
+            添加一级目录
+          </button>
+          <button type="button" id="btnBatchMove">
+            <svg class="i" width="13" height="13" aria-hidden="true"><use href="#i-swap"></use></svg>
+            批量移动图表
+          </button>
+        </div>
+        <button class="dir-toggle" id="dirToggle" title="收起 / 展开目录">
+          <svg class="i" width="12" height="12" aria-hidden="true"><use href="#i-chevrons-left"></use></svg>
+        </button>
+      </aside>
+
+      <section class="gallery-panel">
+        <div class="gal-head" id="galHead">
+          <span class="gal-count">共 <b>0</b> 张图表</span>
+          <div class="gi-search">
+            <svg class="i" width="13" height="13" aria-hidden="true"><use href="#i-search"></use></svg>
+            <input id="galSearch" placeholder="搜索图表名称" autocomplete="off">
+          </div>
+          <div class="gal-filters">
+            <div class="gi-date" id="giDate">
+              <button type="button" class="gi-date-btn" id="giDateBtn">
+                <svg class="i" width="13" height="13" aria-hidden="true"><use href="#i-calendar"></use></svg>
+                <span id="giDateText">创建时间</span>
+                <svg class="i" width="10" height="10" aria-hidden="true"><use href="#i-chevron-down"></use></svg>
+              </button>
+              <div class="gi-date-pop" id="giDatePop">
+                <div class="gdp-row">
+                  <label>开始日期</label>
+                  <input type="date" id="gdpFrom">
+                </div>
+                <div class="gdp-row">
+                  <label>结束日期</label>
+                  <input type="date" id="gdpTo">
+                </div>
+                <div class="gdp-quick">
+                  <button type="button" data-days="7">近7天</button>
+                  <button type="button" data-days="30">近30天</button>
+                  <button type="button" data-days="90">近90天</button>
+                </div>
+                <div class="gdp-actions">
+                  <button type="button" class="btn tint" id="gdpReset">重置</button>
+                  <button type="button" class="btn primary" id="gdpOk">确定</button>
+                </div>
+              </div>
+            </div>
+          </div>
+          <button type="button" class="btn-add-chart" id="btnAddChart">
+            <svg class="i" width="14" height="14" aria-hidden="true"><use href="#i-g-1840980a"></use></svg>
+            添加图表
+          </button>
+        </div>
+        <div class="gal-scroll">
+          <div class="gal-grid" id="galGrid"></div>
+        </div>
+        <div class="gal-pager" id="galPager"></div>
+      </section>
+    </main>
+  </div>
+</div>
+
+<div class="toast" id="toast"><span class="t-ico">ℹ️</span><span class="t-msg" id="toastMsg"></span></div>
+
+<!-- 添加目录 -->
+<div class="modal-mask" id="dirAddMask">
+  <div class="modal" style="width:480px;max-width:94vw">
+    <header class="modal-head">
+      <span class="mh-title">
+        <span class="mh-ico"><svg class="i" width="16" height="16" aria-hidden="true"><use href="#i-plus-16"></use></svg></span>
+        添加
+      </span>
+      <button class="mh-x" data-close="dirAddMask">✕</button>
+    </header>
+    <div class="modal-body">
+      <div class="df-form">
+        <div class="df-row"><label>上级目录</label><div class="df-val" id="daParent">—</div></div>
+        <div class="df-row"><label>目录名称</label><input type="text" id="daName" placeholder="必填项" autocomplete="off"></div>
+      </div>
+    </div>
+    <div class="modal-foot">
+      <button class="btn primary" id="daOk" style="min-width:88px">保存</button>
+      <button class="btn tint" data-close="dirAddMask" style="min-width:88px">取消</button>
+    </div>
+  </div>
+</div>
+
+<!-- 编辑目录 -->
+<div class="modal-mask" id="dirEditMask">
+  <div class="modal" style="width:480px;max-width:94vw">
+    <header class="modal-head">
+      <span class="mh-title">
+        <span class="mh-ico"><svg class="i" width="16" height="16" aria-hidden="true"><use href="#i-edit-fill"></use></svg></span>
+        编辑
+      </span>
+      <button class="mh-x" data-close="dirEditMask">✕</button>
+    </header>
+    <div class="modal-body">
+      <div class="df-form">
+        <div class="df-row"><label>目录名称</label><input type="text" id="deName" placeholder="必填项" autocomplete="off"></div>
+        <div class="df-row"><label>上级目录</label><select id="deParent"></select></div>
+        <div class="df-note">注：只能移动到同一层级的分类</div>
+      </div>
+    </div>
+    <div class="modal-foot">
+      <button class="btn primary" id="deOk" style="min-width:88px">保存</button>
+      <button class="btn tint" data-close="dirEditMask" style="min-width:88px">取消</button>
+    </div>
+  </div>
+</div>
+
+<!-- 保存到图库 -->
+<div class="modal-mask" id="saveChartMask">
+  <div class="modal" style="width:480px;max-width:94vw">
+    <header class="modal-head">
+      <span class="mh-title">
+        <span class="mh-ico"><svg class="i" width="16" height="16" aria-hidden="true"><use href="#i-nav-gallery"></use></svg></span>
+        保存到图库
+      </span>
+      <button class="mh-x" data-close="saveChartMask">✕</button>
+    </header>
+    <div class="modal-body">
+      <div class="df-form">
+        <div class="df-row">
+          <label><i class="req">*</i>图库名称</label>
+          <input type="text" id="scName" maxlength="80" placeholder="请输入图库名称" autocomplete="off">
+        </div>
+        <div class="df-row">
+          <label><i class="req">*</i>保存路径</label>
+          <div class="sc-path" id="scPath">
+            <button type="button" class="sc-path-btn" id="scPathBtn">
+              <span class="sc-path-txt ph" id="scPathTxt">请选择图库目录</span>
+              <svg class="i" width="10" height="10" aria-hidden="true"><use href="#i-caret-down"></use></svg>
+            </button>
+            <div class="sc-path-panel" id="scPathPanel"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="modal-foot">
+      <button class="btn primary" id="scOk" style="min-width:88px">确定</button>
+      <button class="btn tint" data-close="saveChartMask" style="min-width:88px">取消</button>
+    </div>
+  </div>
+</div>
+
+<!-- 新建图表 · 右侧抽屉 -->
+<div class="builder-drawer-root" id="builderDrawer" aria-hidden="true">
+  <div class="builder-drawer-mask" id="builderDrawerMask"></div>
+  <div class="builder-drawer" role="dialog" aria-modal="true" aria-label="新建图表">
+    <div class="builder-boot" id="builderBoot"></div>
+    <iframe id="builderFrame" title="新建图表" src="about:blank"></iframe>
+  </div>
+</div>
+
+<!-- 批量移动图表 -->
+<div class="modal-mask" id="batchMask">
+  <div class="modal" style="width:600px;max-width:94vw">
+    <header class="modal-head">
+      <span class="mh-title">
+        <span class="mh-ico"><svg class="i" width="16" height="16" aria-hidden="true"><use href="#i-swap-16"></use></svg></span>
+        批量移动图表
+      </span>
+      <button class="mh-x" data-close="batchMask">✕</button>
+    </header>
+    <div class="modal-body">
+      <div style="display:flex;align-items:center;gap:10px;margin-bottom:10px">
+        <div style="font-size:13px;color:var(--text-2)">来源目录：<b id="bmFrom">—</b></div>
+        <span class="bm-summary" id="bmCount" style="margin-left:auto">已选 0 / 0</span>
+        <button type="button" class="btn" id="bmAll" style="height:30px;padding:0 12px;font-size:12px">全选</button>
+      </div>
+      <div class="bm-list" id="bmList"></div>
+      <div class="bm-select">
+        <label>移动到</label>
+        <div class="sc-path" id="bmPath">
+          <button type="button" class="sc-path-btn" id="bmPathBtn">
+            <span class="sc-path-txt ph" id="bmPathTxt">请选择目标目录</span>
+            <svg class="i" width="10" height="10" aria-hidden="true"><use href="#i-caret-down"></use></svg>
+          </button>
+          <div class="sc-path-panel" id="bmPathPanel"></div>
+        </div>
+      </div>
+    </div>
+    <div class="modal-foot">
+      <span class="foot-left">支持将卡片拖到目录树，也可用此面板批量移动</span>
+      <button class="btn primary" id="bmOk">确认移动</button>
+      <button class="btn tint" data-close="batchMask">取消</button>
+    </div>
+  </div>
+</div>
+
+<!-- 删除目录 -->
+<div class="modal-mask" id="dirDelMask">
+  <div class="modal" style="width:440px;max-width:94vw">
+    <header class="modal-head">
+      <span class="mh-title">
+        <span class="mh-ico danger"><svg class="i" width="16" height="16" aria-hidden="true"><use href="#i-trash"></use></svg></span>
+        删除目录
+      </span>
+      <button class="mh-x" data-close="dirDelMask">✕</button>
+    </header>
+    <div class="modal-body">
+      <div id="dirDelMsg" style="font-size:14px;color:var(--text);line-height:1.65;padding:8px 4px 4px"></div>
+    </div>
+    <div class="modal-foot">
+      <button class="btn danger" id="dirDelOk" style="min-width:88px">删除</button>
+      <button class="btn tint" data-close="dirDelMask" style="min-width:88px">取消</button>
+    </div>
+  </div>
+</div>
+
+<script>
+var ME = "吴开文";
+var DIR_TREE = [
+  { name:"期权", children:["股指期权","商品期权"] },
+  { name:"PVC", children:["现货","基差","库存"] },
+  { name:"烧碱", children:["现货","开工率"] },
+  { name:"PE", children:["线性","高压","低压"] },
+  { name:"PP", children:["拉丝","共聚","基差"] },
+  { name:"丙烯", children:["现货","价差"] },
+  { name:"钢材", children:["螺纹","热卷","中厚板"] },
+  { name:"沪铜", children:["主力","基差","库存"] },
+  { name:"沪锌", children:["主力","基差"] },
+  { name:"双焦", children:["焦炭","焦煤"] },
+  { name:"铝链", children:["电解铝","氧化铝","预焙阳极"] }
+];
+var DIR_EDIT_CTX = null;
+var DIR_ADD_PARENT = "";
+var DIR_DEL_PATH = "";
+var gridDir = "";
+var gridItemId = "";
+var DIR_EXP = {};
+var PENDING_SAVE = null;
+var EDITING_CHART_ID = "";
+var RESTORE_CHART = null;
+var BUILDER_FRAME_READY = false;
+
+var COLORS = [
+  ["#2f6bff","#e34d59","#12b76a"],
+  ["#c8102e","#1a3a6b","#d4a017"],
+  ["#7b61ff","#f2994a","#56ccf2"],
+  ["#27ae60","#eb5757","#2f6bff"],
+  ["#e8734a","#6478c8","#4ecf9f"]
+];
+
+function hashStr(s){
+  var h = 0;
+  for(var i = 0; i < s.length; i++) h = (h * 31 + s.charCodeAt(i)) >>> 0;
+  return h;
+}
+function rndSeries(seed, n, base, amp){
+  var out = [], v = base;
+  for(var i = 0; i < n; i++){
+    seed = (seed * 9301 + 49297) % 233280;
+    v += ((seed / 233280) - 0.48) * amp;
+    out.push(Math.round(v * 10) / 10);
+  }
+  return out;
+}
+
+var galG2 = {};
+function destroyGalG2(){
+  Object.keys(galG2).forEach(function(id){
+    try{ galG2[id].destroy(); }catch(e){}
+  });
+  galG2 = {};
+}
+function miniLegends(seed, kind){
+  var cols = COLORS[seed % COLORS.length];
+  if(kind === "plastic") return [["L2509", "#2f6bff"], ["基差", "#e34d59"], ["月差", "#12b76a"]];
+  if(kind === "pp") return [["PP主力", "#c8102e"], ["基差", "#1a3a6b"], ["月差", "#d4a017"]];
+  if(kind === "pig") return [["鲜冻价差", "#7b61ff"], ["出栏均价", "#f2994a"]];
+  return [["系列A", cols[0]], ["系列B", cols[1]], ["系列C", cols[2]]];
+}
+function miniChartType(seed, kind){
+  if(kind === "plastic" || kind === "pp") return "line";
+  if(kind === "pig") return "area";
+  return ["line", "area", "col"][seed % 3];
+}
+function miniFlatData(seed, kind, n){
+  var legends = miniLegends(seed, kind);
+  var flat = [];
+  legends.forEach(function(L, si){
+    var vals = rndSeries(seed + 11 + si * 19, n, 36 + si * 10, 5 + si);
+    vals.forEach(function(v, i){
+      var m = 1 + Math.floor(i / 4);
+      var d = 1 + (i % 4) * 7;
+      flat.push({ x: m + "/" + d, i: i, value: v, name: L[0] });
+    });
+  });
+  return { flat: flat, names: legends.map(function(L){ return L[0]; }), colors: legends.map(function(L){ return L[1]; }) };
+}
+function miniTypeFromSaved(type){
+  if(type === "pie") return "pie";
+  if(type === "stackColPercent") return "stackColPercent";
+  if(type === "stackAreaPercent") return "stackAreaPercent";
+  if(type === "stackCol") return "stackCol";
+  if(type === "stackArea") return "stackArea";
+  if(type === "area") return "area";
+  if(type === "bar" || type === "col" || type === "column" || type === "hbar") return "col";
+  return "line";
+}
+function downsampleArr(arr, n){
+  arr = arr || [];
+  if(arr.length <= n) return arr.slice();
+  var out = [];
+  for(var i = 0; i < n; i++){
+    out.push(arr[Math.round(i * (arr.length - 1) / (n - 1))]);
+  }
+  return out;
+}
+function packFromSnapshot(snap){
+  var series = (snap && snap.series) || [];
+  var n = 24;
+  var flat = [], names = [], colors = [];
+  series.forEach(function(s){
+    var name = s.alias || s.name || "系列";
+    names.push(name);
+    colors.push(s.color || "#2f6bff");
+    downsampleArr(s.data || [], n).forEach(function(v, i){
+      if(v == null || !isFinite(+v)) return;
+      flat.push({ x: String(i + 1), i: i, value: +v, name: name });
+    });
+  });
+  return { flat: flat, names: names, colors: colors };
+}
+function miniYLabel(v){
+  var n = Number(v);
+  if(!isFinite(n)) return "";
+  var a = Math.abs(n);
+  if(a >= 1e8) return (n / 1e8).toFixed(a >= 1e9 ? 0 : 1).replace(/\.0$/, "") + "亿";
+  if(a >= 1e4) return (n / 1e4).toFixed(a >= 1e5 ? 0 : 1).replace(/\.0$/, "") + "万";
+  if(a >= 1000) return Math.round(n).toLocaleString("zh-CN");
+  if(Math.abs(n - Math.round(n)) < 1e-6) return String(Math.round(n));
+  return String(Math.round(n * 10) / 10);
+}
+/* 缩略图坐标刻度强制 2~3 个（落在 scale 范围内，避免端点被裁切） */
+function miniThreeTicks(min, max){
+  var lo = Number(min), hi = Number(max);
+  if(!isFinite(lo) || !isFinite(hi)) return [];
+  if(lo === hi) return [lo];
+  if(lo > hi){ var t = lo; lo = hi; hi = t; }
+  var mid = lo + (hi - lo) / 2;
+  var span = hi - lo;
+  function roundTick(v){
+    if(span >= 100) return Math.round(v);
+    if(span >= 10) return Math.round(v * 10) / 10;
+    if(span >= 1) return Math.round(v * 100) / 100;
+    return +Number(v).toPrecision(4);
+  }
+  return [roundTick(lo), roundTick(mid), roundTick(hi)];
+}
+function paintMiniLegend(c, pack, type){
+  var box = document.getElementById("lg-" + c.id);
+  if(!box) return;
+  if(!pack || !pack.names || !pack.names.length){
+    box.innerHTML = "";
+    return;
+  }
+  var useLine = type === "line" || type === "area" || type === "stackArea" || type === "stackAreaPercent";
+  var useSq = type === "col" || type === "stackCol" || type === "stackColPercent" || type === "pie";
+  box.innerHTML = pack.names.map(function(nm, i){
+    var color = pack.colors[i] || "#2f6bff";
+    var mark = useLine
+      ? '<span class="mlg-line" style="background:' + color + ';color:' + color + '"></span>'
+      : useSq
+        ? '<span class="mlg-sq" style="background:' + color + '"></span>'
+        : '<span class="mlg-dot" style="background:' + color + '"></span>';
+    var label = String(nm).replace(/</g, "&lt;");
+    return '<span class="mlg-item" title="' + label + '">' + mark
+      + '<span class="mlg-name">' + label + "</span></span>";
+  }).join("");
+}
+function paintMiniChart(c){
+  if(c.thumb) return;
+  var elId = "g2-" + c.id;
+  var el = document.getElementById(elId);
+  if(!el || typeof G2 === "undefined") return;
+  if(galG2[c.id]){
+    try{ galG2[c.id].destroy(); }catch(e){}
+    delete galG2[c.id];
+  }
+  el.innerHTML = "";
+  var type, pack;
+  if(c.snapshot && c.snapshot.series && c.snapshot.series.length){
+    type = miniTypeFromSaved(c.snapshot.type);
+    pack = packFromSnapshot(c.snapshot);
+  } else {
+    type = miniChartType(c.seed, c.kind);
+    pack = miniFlatData(c.seed, c.kind, type === "col" ? 8 : 20);
+  }
+  if(!pack.flat.length) return;
+  paintMiniLegend(c, pack, type);
+  var chart = new G2.Chart({
+    container: elId,
+    autoFit: true,
+    paddingLeft: 52,
+    paddingRight: 10,
+    paddingTop: 6,
+    paddingBottom: 26,
+    margin: 0,
+    theme: "light",
+    animation: false
+  });
+  var colorScale = { domain: pack.names, range: pack.colors };
+  var isPct = type === "stackColPercent" || type === "stackAreaPercent";
+  var yTickMethod = isPct
+    ? function(){ return [0, 0.5, 1]; }
+    : function(min, max){ return miniThreeTicks(min, max); };
+  var xTickMethod = function(min, max){ return miniThreeTicks(min, max); };
+  var axisX = {
+    title: false,
+    label: true,
+    labelFontSize: 12,
+    labelFill: "#4E5969",
+    labelAutoHide: false,
+    labelAutoRotate: false,
+    labelFilter: function(_, i, ticks){
+      var n = ticks && ticks.length != null ? ticks.length : 0;
+      if(n <= 3) return true;
+      return i === 0 || i === Math.floor((n - 1) / 2) || i === n - 1;
+    },
+    tick: false,
+    tickCount: 3,
+    line: true,
+    lineStroke: "#C9CDD4",
+    lineLineWidth: 1,
+    grid: false
+  };
+  var axisY = {
+    title: false,
+    label: true,
+    labelFontSize: 14,
+    labelFill: "#1D2129",
+    labelFontWeight: 600,
+    labelFormatter: isPct
+      ? function(v){ return Math.round(+v * 100) + "%"; }
+      : miniYLabel,
+    tick: false,
+    tickCount: 3,
+    nice: true,
+    line: false,
+    grid: true,
+    gridStroke: "#C9CDD4",
+    gridLineWidth: 1,
+    gridLineDash: []
+  };
+  var yScale = { nice: true, tickCount: 3, tickMethod: yTickMethod };
+  var xScaleNum = { tickCount: 3, tickMethod: xTickMethod };
+  /* 图例改外置 HTML，关闭 G2 内置圆点图例 */
+  var noLegend = false;
+  if(type === "pie"){
+    var pieRows = pack.names.map(function(nm, i){
+      var last = pack.flat.filter(function(d){ return d.name === nm; }).pop();
+      return { name: nm, value: last ? last.value : 1, color: pack.colors[i] };
+    });
+    chart.interval()
+      .coordinate({ type: "theta", outerRadius: 0.78 })
+      .data(pieRows)
+      .transform({ type: "stackY" })
+      .encode("y", "value")
+      .encode("color", "name")
+      .scale("color", colorScale)
+      .legend(noLegend)
+      .tooltip(false);
+  } else if(type === "col" || type === "stackCol" || type === "stackColPercent"){
+    var colMark = chart.interval()
+      .data(pack.flat)
+      .encode("x", "x")
+      .encode("y", "value")
+      .encode("color", "name")
+      .scale("color", colorScale)
+      .scale("y", yScale)
+      .style("maxWidth", 10)
+      .axis("x", axisX)
+      .axis("y", axisY)
+      .legend(noLegend)
+      .tooltip(false);
+    if(type === "stackColPercent"){
+      colMark.transform([{ type: "stackY" }, { type: "normalizeY" }]);
+      colMark.scale("y", { domain: [0, 1], tickMethod: yTickMethod, tickCount: 3 });
+    } else if(type === "stackCol"){
+      colMark.transform({ type: "stackY" });
+    } else {
+      colMark.encode("series", "name").transform({ type: "dodgeX" });
+    }
+  } else if(type === "area" || type === "stackArea" || type === "stackAreaPercent"){
+    var areaMark = chart.area()
+      .data(pack.flat)
+      .encode("x", "i")
+      .encode("y", "value")
+      .encode("color", "name")
+      .encode("series", "name")
+      .style("fillOpacity", 0.22)
+      .style("shape", "smooth")
+      .scale("color", colorScale)
+      .scale("x", xScaleNum)
+      .scale("y", yScale)
+      .axis("x", axisX)
+      .axis("y", axisY)
+      .legend(noLegend)
+      .tooltip(false);
+    var areaLine = chart.line()
+      .data(pack.flat)
+      .encode("x", "i")
+      .encode("y", "value")
+      .encode("color", "name")
+      .encode("series", "name")
+      .style("lineWidth", 2)
+      .style("shape", "smooth")
+      .scale("color", colorScale)
+      .scale("x", xScaleNum)
+      .scale("y", yScale)
+      .axis(false)
+      .legend(false)
+      .tooltip(false);
+    if(type === "stackAreaPercent"){
+      areaMark.transform([{ type: "stackY" }, { type: "normalizeY" }]);
+      areaLine.transform([{ type: "stackY" }, { type: "normalizeY" }]);
+      areaMark.scale("y", { domain: [0, 1], tickMethod: yTickMethod, tickCount: 3 });
+      areaLine.scale("y", { domain: [0, 1], tickMethod: yTickMethod, tickCount: 3 });
+    } else if(type === "stackArea"){
+      areaMark.transform({ type: "stackY" });
+      areaLine.transform({ type: "stackY" });
+    }
+  } else {
+    chart.line()
+      .data(pack.flat)
+      .encode("x", "i")
+      .encode("y", "value")
+      .encode("color", "name")
+      .encode("series", "name")
+      .style("lineWidth", 2)
+      .style("shape", "smooth")
+      .scale("color", colorScale)
+      .scale("x", xScaleNum)
+      .scale("y", yScale)
+      .axis("x", axisX)
+      .axis("y", axisY)
+      .legend(noLegend)
+      .tooltip(false);
+  }
+  chart.render();
+  galG2[c.id] = chart;
+}
+
+var CHARTS = (function(){
+  var titles = [
+    { t:"塑料主力收盘价及基差走势图", dir:"PVC", kind:"plastic", mine:true },
+    { t:"PP主力收盘价及基差月差对比", dir:"PP", kind:"pp", mine:true },
+    { t:"全国猪肉鲜冻价差情况和生猪出栏均价", dir:"农产品", kind:"pig", mine:false },
+    { t:"PVC现货基差与库存滚动监测", dir:"PVC/基差", kind:"plastic", mine:false },
+    { t:"烧碱开工率与现货价格走势", dir:"烧碱", kind:"", mine:true },
+    { t:"PE线性高压价差结构图", dir:"PE", kind:"", mine:false },
+    { t:"螺纹钢主力与热卷基差对比", dir:"钢材", kind:"", mine:true },
+    { t:"沪铜主力收盘价及仓单变化", dir:"沪铜", kind:"", mine:false },
+    { t:"沪锌基差与进口盈亏", dir:"沪锌", kind:"", mine:false },
+    { t:"双焦基差月差联动监测", dir:"双焦", kind:"", mine:true },
+    { t:"铝链电解铝与氧化铝价差", dir:"铝链", kind:"", mine:false },
+    { t:"丙烯现货与PP价差跟踪", dir:"丙烯", kind:"", mine:false },
+    { t:"商品期权波动率曲面快览", dir:"期权/商品期权", kind:"", mine:true },
+    { t:"股指期权隐波与现货对比", dir:"期权/股指期权", kind:"", mine:false },
+    { t:"PVC月差结构与下游利润", dir:"PVC", kind:"plastic", mine:false }
+  ];
+  var suffixes = ["", "（周报）", "（月报）", "· 更新版", "· 复盘"];
+  var out = [];
+  for(var r = 0; r < 4; r++){
+    titles.forEach(function(x, i){
+      var title = x.t + suffixes[r % suffixes.length] + (r ? " #" + (r + 1) : "");
+      var id = "C" + String(10000 + hashStr(title + r) % 90000);
+      var month = 5 + ((r + i) % 4); /* 5–8 月，便于创建时间筛选演示 */
+      var day = 1 + ((i * 3 + r * 5) % 28);
+      out.push({
+        id: id,
+        title: title,
+        dir: x.dir,
+        kind: x.kind,
+        mine: x.mine,
+        date: "2026-" + (month < 10 ? "0" + month : month) + "-" + (day < 10 ? "0" + day : day),
+        inMine: false,
+        seed: hashStr(title + id)
+      });
+    });
+  }
+  return out;
+})();
+
+var LS_GALLERY_CHARTS = "ailab.gallery.userCharts";
+var LS_GALLERY_DIRS = "ailab.gallery.dirTree";
+var LS_GALLERY_CHART_DIRS = "ailab.gallery.chartDirs";
+function isUserChart(c){
+  return !!(c && c.id && (c.builderState || c.thumb));
+}
+function persistChartDirs(){
+  var map = {};
+  CHARTS.forEach(function(c){ if(c && c.id) map[c.id] = c.dir || ""; });
+  try{ localStorage.setItem(LS_GALLERY_CHART_DIRS, JSON.stringify(map)); }catch(e){}
+}
+function persistGallery(){
+  try{
+    localStorage.setItem(LS_GALLERY_CHARTS, JSON.stringify(CHARTS.filter(isUserChart)));
+  }catch(e){
+    try{
+      var slim = CHARTS.filter(isUserChart).map(function(c){
+        return {
+          id: c.id, title: c.title, dir: c.dir, kind: c.kind, mine: true,
+          date: c.date, inMine: true, seed: c.seed,
+          snapshot: c.snapshot || null, builderState: c.builderState || null
+        };
+      });
+      localStorage.setItem(LS_GALLERY_CHARTS, JSON.stringify(slim));
+    }catch(e2){
+      toast("图表已保存，但浏览器缓存已满，刷新后可能丢失");
+    }
+  }
+  try{ localStorage.setItem(LS_GALLERY_DIRS, JSON.stringify(DIR_TREE)); }catch(e){}
+  persistChartDirs();
+}
+function loadPersistedGallery(){
+  try{
+    var dirs = JSON.parse(localStorage.getItem(LS_GALLERY_DIRS) || "null");
+    if(dirs && Array.isArray(dirs) && dirs.length) DIR_TREE = dirs;
+  }catch(e){}
+  try{
+    var saved = JSON.parse(localStorage.getItem(LS_GALLERY_CHARTS) || "[]");
+    if(Array.isArray(saved) && saved.length){
+      var byId = {};
+      saved.forEach(function(c){ if(c && c.id) byId[c.id] = c; });
+      var rest = CHARTS.filter(function(c){ return !byId[c.id]; });
+      CHARTS = saved.concat(rest);
+    }
+  }catch(e){}
+  try{
+    var map = JSON.parse(localStorage.getItem(LS_GALLERY_CHART_DIRS) || "{}");
+    if(map && typeof map === "object"){
+      CHARTS.forEach(function(c){
+        if(c && c.id && Object.prototype.hasOwnProperty.call(map, c.id)) c.dir = map[c.id] || "";
+      });
+    }
+  }catch(e){}
+}
+loadPersistedGallery();
+
+var PAGE_SIZE = 12;
+var gridPage = 1;
+var state = { kw:"", exact:false, onlyMine:false, dateFrom:"", dateTo:"" };
+
+function toast(msg){
+  var el = document.getElementById("toast");
+  document.getElementById("toastMsg").textContent = msg;
+  el.classList.add("show");
+  clearTimeout(toast._t);
+  toast._t = setTimeout(function(){ el.classList.remove("show"); }, 2200);
+}
+function matchText(s, kw, exact){
+  if(!kw) return true;
+  var a = (s || "").toLowerCase();
+  var b = kw.toLowerCase();
+  return exact ? a === b : a.indexOf(b) > -1;
+}
+function chartDirPath(c){ return c.dir || ""; }
+function dirCntOf(path){
+  if(!path) return CHARTS.length;
+  return CHARTS.filter(function(c){
+    var p = chartDirPath(c);
+    var top = p.split("/")[0];
+    return p === path || p.indexOf(path + "/") === 0 || path === top;
+  }).length;
+}
+function dirChildName(c){ return typeof c === "string" ? c : c.name; }
+function dirChildKids(c){ return c && typeof c === "object" ? (c.children || null) : null; }
+function dirNormChild(arr, idx){
+  if(typeof arr[idx] === "string") arr[idx] = { name: arr[idx], children: [] };
+  if(!arr[idx].children) arr[idx].children = [];
+  return arr[idx];
+}
+function dirLocate(path){
+  if(!path) return null;
+  var parts = path.split("/");
+  var topIdx = DIR_TREE.findIndex(function(d){ return d.name === parts[0]; });
+  if(topIdx < 0) return null;
+  if(parts.length === 1) return { node: DIR_TREE[topIdx], container: DIR_TREE, index: topIdx };
+  var container = DIR_TREE[topIdx].children;
+  if(!container) return null;
+  var node = null, index = -1;
+  for(var i = 1; i < parts.length; i++){
+    index = -1;
+    for(var j = 0; j < container.length; j++){
+      if(dirChildName(container[j]) === parts[i]){ index = j; node = container[j]; break; }
+    }
+    if(index < 0) return null;
+    if(i < parts.length - 1){
+      dirNormChild(container, index);
+      container = container[index].children;
+    }
+  }
+  return { node: node, container: container, index: index };
+}
+function dirAddUnder(parentPath, name){
+  if(!parentPath){
+    if(DIR_TREE.some(function(d){ return d.name === name; })) return { ok:false, msg:"已存在同名一级目录" };
+    DIR_TREE.push({ name: name });
+    return { ok:true, path: name };
+  }
+  var parts = parentPath.split("/");
+  var top = DIR_TREE.find(function(d){ return d.name === parts[0]; });
+  if(!top) return { ok:false, msg:"上级目录不存在" };
+  if(!top.children) top.children = [];
+  var container = top.children;
+  for(var i = 1; i < parts.length; i++){
+    var idx = -1;
+    for(var j = 0; j < container.length; j++){
+      if(dirChildName(container[j]) === parts[i]){ idx = j; break; }
+    }
+    if(idx < 0) return { ok:false, msg:"上级目录不存在" };
+    dirNormChild(container, idx);
+    container = container[idx].children;
+  }
+  if(container.some(function(c){ return dirChildName(c) === name; })){
+    return { ok:false, msg:"该目录下已存在同名子目录" };
+  }
+  container.push(name);
+  return { ok:true, path: parentPath + "/" + name };
+}
+function dirOpsHTML(path){
+  if(!path) return "";
+  var IC_MOVE = '<svg class="i" width="14" height="14" aria-hidden="true"><use href="#i-g-18d681d0"></use></svg>';
+  var IC_EDIT = '<svg class="i" width="14" height="14" aria-hidden="true"><use href="#i-edit"></use></svg>';
+  var IC_DEL  = '<svg class="i" width="14" height="14" aria-hidden="true"><use href="#i-trash"></use></svg>';
+  return '<button type="button" class="di-plus di-add" data-path="' + path + '" title="添加子目录">＋</button>'
+    + '<span class="di-ops">'
+    + '<button type="button" class="di-move" data-path="' + path + '" title="移动">' + IC_MOVE + '</button>'
+    + '<button type="button" class="di-edit" data-path="' + path + '" title="编辑">' + IC_EDIT + '</button>'
+    + '<button type="button" class="di-del danger" data-path="' + path + '" title="删除">' + IC_DEL + '</button>'
+    + '</span>';
+}
+function selectedDirParent(){ return gridDir || ""; }
+function syncAddDirBtn(){
+  var btn = document.getElementById("btnAddDir");
+  if(!btn) return;
+  var icon = '<svg class="i" width="13" height="13" aria-hidden="true"><use href="#i-plus-14"></use></svg>';
+  btn.innerHTML = icon + (selectedDirParent() ? "添加子目录" : "添加一级目录");
+}
+function dirArrowHTML(hasChild){
+  return hasChild
+    ? '<svg class="i" width="9" height="9" aria-hidden="true"><use href="#i-chevron-right"></use></svg>'
+    : '<span class="di-arrow-ph" style="display:inline-block;width:9px"></span>';
+}
+function dirIconHTML(size, open){
+  size = size || 14;
+  return '<svg class="i" width="' + size + '" height="' + size + '" aria-hidden="true"><use href="#' + (open ? "i-folder-open" : "i-folder") + '"></use></svg>';
+}
+function dirDocIconHTML(){
+  return '<svg class="i" width="13" height="13" aria-hidden="true"><use href="#i-dir-chart"></use></svg>';
+}
+function itemsInDir(path){
+  return CHARTS.filter(function(c){ return chartDirPath(c) === path; });
+}
+function dirHasKids(path){
+  var loc = dirLocate(path);
+  var kids = loc ? dirChildKids(loc.node) : null;
+  return !!(kids && kids.length);
+}
+function dirIsOpen(path, hasKids){
+  if(hasKids) return DIR_EXP[path] !== false;
+  return DIR_EXP[path] === true;
+}
+function dirLeafHTML(c){
+  var name = String(c.title || c.id || "").replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/"/g, "&quot;");
+  var on = gridItemId && gridItemId === c.id ? " active" : "";
+  var IC_MOVE = '<svg class="i" width="14" height="14" aria-hidden="true"><use href="#i-g-18d681d0"></use></svg>';
+  return '<div class="dir-item dt-leaf' + on + '" draggable="true" data-id="' + c.id + '">'
+    + '<span class="di-arrow-ph" style="display:inline-block;width:9px"></span>'
+    + '<span class="di-icon">' + dirDocIconHTML() + '</span>'
+    + '<span class="di-name" title="' + name + '">' + name + '</span>'
+    + '<span class="di-ops">'
+    + '<button type="button" class="di-move" data-id="' + c.id + '" title="移动">' + IC_MOVE + '</button>'
+    + '</span></div>';
+}
+function renderDirFolder(name, path, kids, iconSize){
+  var leaves = itemsInDir(path);
+  var hasKids = !!(kids && kids.length);
+  var canExp = hasKids || leaves.length > 0;
+  var open = canExp && dirIsOpen(path, hasKids);
+  var active = (!gridItemId && gridDir === path) ? " active" : "";
+  var html = '<div class="dir-item' + (open ? " open" : "") + active + '" data-path="' + String(path).replace(/"/g, "&quot;") + '">'
+    + '<span class="di-arrow">' + dirArrowHTML(canExp) + '</span>'
+    + '<span class="di-icon">' + dirIconHTML(iconSize, open) + '</span>'
+    + '<span class="di-name">' + String(name).replace(/</g, "&lt;") + '</span>'
+    + dirOpsHTML(path)
+    + '<span class="di-cnt">' + dirCntOf(path) + '</span>'
+    + '</div>';
+  if(open && (hasKids || leaves.length)){
+    html += '<div class="dir-children open">';
+    (kids || []).forEach(function(c){
+      var n = dirChildName(c);
+      html += renderDirFolder(n, path + "/" + n, dirChildKids(c), 13);
+    });
+    leaves.forEach(function(c){ html += dirLeafHTML(c); });
+    html += '</div>';
+  }
+  return html;
+}
+function renderDir(){
+  var html = "";
+  DIR_TREE.forEach(function(d){
+    html += renderDirFolder(d.name, d.name, d.children, 14);
+  });
+  document.getElementById("dirTree").innerHTML = html;
+  syncAddDirBtn();
+}
+
+function filteredCharts(){
+  return CHARTS.filter(function(c){
+    if(state.onlyMine && !c.mine) return false;
+    if(gridItemId){
+      if(c.id !== gridItemId) return false;
+    } else if(gridDir){
+      var p = chartDirPath(c);
+      var top = p.split("/")[0];
+      if(!(p === gridDir || p.indexOf(gridDir + "/") === 0 || gridDir === top)) return false;
+    }
+    if(state.dateFrom && c.date < state.dateFrom) return false;
+    if(state.dateTo && c.date > state.dateTo) return false;
+    if(state.nameKw && !matchText(c.title, state.nameKw, false)) return false;
+    return matchText(c.title, state.kw, state.exact) || matchText(c.id, state.kw, state.exact);
+  });
+}
+function pagedCharts(arr){
+  var pages = Math.max(1, Math.ceil(arr.length / PAGE_SIZE));
+  if(gridPage > pages) gridPage = pages;
+  if(gridPage < 1) gridPage = 1;
+  var start = (gridPage - 1) * PAGE_SIZE;
+  return arr.slice(start, start + PAGE_SIZE);
+}
+function renderPager(total){
+  var box = document.getElementById("galPager");
+  if(!box) return;
+  var pages = Math.max(1, Math.ceil(total / PAGE_SIZE) || 1);
+  if(gridPage > pages) gridPage = pages;
+  var start = total ? (gridPage - 1) * PAGE_SIZE + 1 : 0;
+  var end = Math.min(gridPage * PAGE_SIZE, total);
+  var nums = [];
+  if(pages <= 7){
+    for(var i = 1; i <= pages; i++) nums.push(i);
+  }else{
+    nums.push(1);
+    var L = Math.max(2, gridPage - 1), R = Math.min(pages - 1, gridPage + 1);
+    if(L > 2) nums.push("…");
+    for(var j = L; j <= R; j++) nums.push(j);
+    if(R < pages - 1) nums.push("…");
+    nums.push(pages);
+  }
+  var html = '<span class="pg-info">第 <b>' + (total ? gridPage : 0) + '</b> / ' + pages + ' 页，显示 ' + start + '-' + end + ' / 共 ' + total + ' 条</span>';
+  html += '<button type="button" data-pg="prev"' + (gridPage <= 1 || !total ? " disabled" : "") + '>‹</button>';
+  nums.forEach(function(n){
+    if(n === "…") html += '<span style="color:var(--text-3);padding:0 2px">…</span>';
+    else html += '<button type="button" data-pg="' + n + '" class="' + (n === gridPage ? "cur" : "") + '"' + (!total ? " disabled" : "") + '>' + n + '</button>';
+  });
+  html += '<button type="button" data-pg="next"' + (gridPage >= pages || !total ? " disabled" : "") + '>›</button>';
+  box.innerHTML = html;
+}
+function renderGallery(opts){
+  opts = opts || {};
+  if(opts.resetPage) gridPage = 1;
+  var list = filteredCharts();
+  var countEl = document.querySelector("#galHead .gal-count");
+  if(countEl) countEl.innerHTML = "共 <b>" + list.length + "</b> 张图表";
+  var page = pagedCharts(list);
+  var box = document.getElementById("galGrid");
+  destroyGalG2();
+  if(!list.length){
+    box.innerHTML = '<div class="gal-empty">暂无匹配图表<br>可调整目录、创建时间或搜索条件</div>';
+    renderPager(0);
+    return;
+  }
+  var g2ok = typeof G2 !== "undefined";
+  box.innerHTML = page.map(function(c){
+    var preview;
+    if(c.thumb){
+      preview = '<img class="cc-thumb" alt="" src="' + c.thumb + '">';
+    } else if(g2ok){
+      preview = '<div class="cc-mini-legend" id="lg-' + c.id + '"></div>'
+        + '<div class="cc-g2" id="g2-' + c.id + '"></div>';
+    } else {
+      preview = '<div class="cc-g2-fallback">G2 未加载</div>';
+    }
+    var title = (c.title || c.id || "").replace(/</g, "&lt;").replace(/"/g, "&quot;");
+    return '<article class="chart-card" data-id="' + c.id + '">'
+      + '<div class="cc-title" title="' + title + '">' + title + '</div>'
+      + '<div class="cc-preview">' + preview + '</div>'
+      + '<div class="cc-foot">'
+      + '<span class="cc-date">创建时间: ' + c.date + '</span>'
+      + '<div class="cc-acts">'
+      + '<button type="button" class="cc-fav' + (c.inMine ? " on" : "") + '" data-fav="' + c.id + '"'
+      + ' aria-label="' + (c.inMine ? "取消收藏" : "添加收藏") + '">'
+      + '<svg class="i" width="16" height="16" aria-hidden="true"><use href="#i-star"></use></svg>'
+      + '<span class="cc-fav-tip">' + (c.inMine ? "取消收藏" : "添加收藏") + '</span>'
+      + '</button>'
+      + '</div></div></article>';
+  }).join("");
+  renderPager(list.length);
+  if(g2ok){
+    requestAnimationFrame(function(){
+      page.forEach(function(c){ if(!c.thumb) paintMiniChart(c); });
+    });
+  }
+}
+function refresh(opts){ renderDir(); renderGallery(opts); }
+function giDateLabel(){
+  var text = document.getElementById("giDateText");
+  var btn = document.getElementById("giDateBtn");
+  if(!text || !btn) return;
+  if(state.dateFrom || state.dateTo){
+    var f = state.dateFrom ? state.dateFrom.slice(5).replace("-", "/") : "…";
+    var t = state.dateTo ? state.dateTo.slice(5).replace("-", "/") : "…";
+    text.textContent = f + " ~ " + t;
+    btn.classList.add("on");
+  }else{
+    text.textContent = "创建时间";
+    btn.classList.remove("on");
+  }
+}
+
+function openMask(id){ document.getElementById(id).classList.add("show"); }
+function closeMask(id){
+  var el = document.getElementById(id);
+  if(el) el.classList.remove("show");
+  if(id === "saveChartMask"){
+    closeScPathPanel();
+    PENDING_SAVE = null;
+    notifyBuilderSaveCancel();
+  }
+  if(id === "batchMask") closeBmPathPanel();
+}
+function notifyBuilderSaveCancel(){
+  var frame = document.getElementById("builderFrame");
+  if(frame && frame.contentWindow){
+    frame.contentWindow.postMessage({ type: "chart-builder-save-cancel" }, "*");
+  }
+}
+document.querySelectorAll("[data-close]").forEach(function(btn){
+  btn.addEventListener("click", function(){ closeMask(btn.dataset.close); });
+});
+["dirAddMask","dirEditMask","dirDelMask","saveChartMask","batchMask"].forEach(function(id){
+  document.getElementById(id).addEventListener("click", function(e){
+    if(e.target === this) closeMask(id);
+  });
+});
+
+var SAVE_CHART_PATH = "";
+function flattenDirItems(nodes, prefix, depth, out){
+  out = out || [];
+  (nodes || []).forEach(function(n){
+    var name = dirChildName(n);
+    var path = prefix ? prefix + "/" + name : name;
+    out.push({ name: name, path: path, depth: depth || 0 });
+    var kids = dirChildKids(n);
+    if(kids && kids.length) flattenDirItems(kids, path, (depth || 0) + 1, out);
+  });
+  return out;
+}
+function scPathLabel(path){
+  return (path || "").split("/").filter(Boolean).join(" / ");
+}
+function closeScPathPanel(){
+  var wrap = document.getElementById("scPath");
+  if(wrap) wrap.classList.remove("open");
+}
+function syncScPathBtn(){
+  var txt = document.getElementById("scPathTxt");
+  if(!txt) return;
+  var label = scPathLabel(SAVE_CHART_PATH);
+  txt.textContent = label || "请选择图库目录";
+  txt.classList.toggle("ph", !label);
+  txt.title = label || "";
+}
+function renderDirPathPanel(panel, selectedPath){
+  if(!panel) return;
+  var items = flattenDirItems(DIR_TREE, "", 0, []);
+  if(!items.length){
+    panel.innerHTML = '<div class="sc-path-item" style="color:var(--text-3);cursor:default">暂无目录，请先添加</div>';
+    return;
+  }
+  panel.innerHTML = items.map(function(it){
+    return '<div class="sc-path-item' + (it.path === selectedPath ? " on" : "") + '" data-path="' + it.path.replace(/"/g, "&quot;") + '" style="padding-left:' + (10 + it.depth * 16) + 'px">'
+      + '<span class="di-icon" style="display:inline-flex;color:var(--text-3)">' + dirIconHTML(13) + '</span>'
+      + '<span>' + it.name.replace(/</g, "&lt;") + '</span>'
+      + '</div>';
+  }).join("");
+}
+function renderScPathPanel(){
+  renderDirPathPanel(document.getElementById("scPathPanel"), SAVE_CHART_PATH);
+}
+
+var MOVE_CHART_PATH = "";
+var BM_IDS = [];
+function chartDirShort(path){
+  var parts = (path || "").split("/").filter(Boolean);
+  return parts.length ? parts[parts.length - 1] : "未分类";
+}
+function closeBmPathPanel(){
+  var wrap = document.getElementById("bmPath");
+  if(wrap) wrap.classList.remove("open");
+}
+function syncBmPathBtn(){
+  var txt = document.getElementById("bmPathTxt");
+  if(!txt) return;
+  var label = scPathLabel(MOVE_CHART_PATH);
+  txt.textContent = label || "请选择目标目录";
+  txt.classList.toggle("ph", !label);
+  txt.title = label || "";
+}
+function renderBmPathPanel(){
+  renderDirPathPanel(document.getElementById("bmPathPanel"), MOVE_CHART_PATH);
+}
+function syncBmCount(){
+  var checked = document.querySelectorAll("#bmList input[type=checkbox]:checked").length;
+  var countEl = document.getElementById("bmCount");
+  var allBtn = document.getElementById("bmAll");
+  if(countEl) countEl.textContent = "已选 " + checked + " / " + BM_IDS.length;
+  if(allBtn) allBtn.textContent = checked === BM_IDS.length && BM_IDS.length ? "取消全选" : "全选";
+}
+function openBatchMove(preselectId){
+  var rows = filteredCharts();
+  if(preselectId){
+    var one = CHARTS.filter(function(c){ return c.id === preselectId; })[0];
+    if(one && rows.indexOf(one) < 0) rows = [one].concat(rows);
+  }
+  if(!rows.length){ toast("当前目录暂无图表可移动"); return; }
+  BM_IDS = rows.map(function(c){ return c.id; });
+  document.getElementById("bmFrom").textContent = gridDir ? scPathLabel(gridDir) : "全部图表";
+  document.getElementById("bmList").innerHTML = rows.map(function(c){
+    var path = chartDirPath(c);
+    var checked = preselectId ? (c.id === preselectId ? " checked" : "") : " checked";
+    var title = (c.title || c.id || "").replace(/</g, "&lt;").replace(/"/g, "&quot;");
+    return '<label class="bm-row"><input type="checkbox"' + checked + ' data-id="' + c.id + '">'
+      + '<span class="bm-name" title="' + title + '">' + title + '</span>'
+      + '<span class="bm-dir" title="' + path.replace(/"/g, "&quot;") + '">' + chartDirShort(path) + '</span></label>';
+  }).join("");
+  MOVE_CHART_PATH = "";
+  syncBmPathBtn();
+  closeBmPathPanel();
+  renderBmPathPanel();
+  syncBmCount();
+  openMask("batchMask");
+}
+function moveChartsToDir(ids, path){
+  var moved = 0;
+  (ids || []).forEach(function(id){
+    var c = CHARTS.filter(function(x){ return x.id === id; })[0];
+    if(!c) return;
+    if(chartDirPath(c) !== path){
+      c.dir = path;
+      moved++;
+    }
+  });
+  return moved;
+}
+function confirmMoveCharts(){
+  if(!MOVE_CHART_PATH){ toast("请选择目标目录"); return; }
+  if(!dirLocate(MOVE_CHART_PATH)){ toast("目录不存在，请重新选择"); return; }
+  var checked = [].map.call(document.querySelectorAll("#bmList input[type=checkbox]:checked"), function(b){ return b.dataset.id; });
+  if(!checked.length){ toast("请勾选要移动的图表"); return; }
+  var moved = moveChartsToDir(checked, MOVE_CHART_PATH);
+  closeBmPathPanel();
+  closeMask("batchMask");
+  persistGallery();
+  gridDir = MOVE_CHART_PATH;
+  gridItemId = "";
+  DIR_EXP[MOVE_CHART_PATH] = true;
+  refresh({ resetPage: true });
+  toast("已移动 " + moved + " 张图表到「" + scPathLabel(MOVE_CHART_PATH) + "」");
+}
+function openSaveChartModal(title){
+  var name = (title || "").trim() || "未命名图表";
+  document.getElementById("scName").value = name;
+  SAVE_CHART_PATH = gridDir || ((DIR_TREE[0] && DIR_TREE[0].name) || "");
+  var editId = (PENDING_SAVE && PENDING_SAVE.editId) || EDITING_CHART_ID;
+  if(editId){
+    var exist = CHARTS.filter(function(c){ return c.id === editId; })[0];
+    if(exist && exist.dir) SAVE_CHART_PATH = exist.dir;
+  }
+  syncScPathBtn();
+  closeScPathPanel();
+  renderScPathPanel();
+  openMask("saveChartMask");
+  setTimeout(function(){
+    var inp = document.getElementById("scName");
+    if(inp){ inp.focus(); inp.select(); }
+  }, 40);
+}
+function todayStr(){
+  var d = new Date();
+  function p(n){ return n < 10 ? "0" + n : "" + n; }
+  return d.getFullYear() + "-" + p(d.getMonth() + 1) + "-" + p(d.getDate());
+}
+function confirmSaveChart(){
+  var name = document.getElementById("scName").value.trim();
+  if(!name){ toast("请填写图库名称"); return; }
+  if(!SAVE_CHART_PATH){ toast("请选择保存路径"); return; }
+  if(!dirLocate(SAVE_CHART_PATH)){ toast("目录不存在，请重新选择"); return; }
+  var pending = PENDING_SAVE || {};
+  var builderState = pending.builderState || null;
+  if(builderState){
+    builderState.title = name;
+    builderState.titleManual = true;
+  }
+  var editId = pending.editId || EDITING_CHART_ID;
+  var exist = editId ? CHARTS.filter(function(c){ return c.id === editId; })[0] : null;
+  var id;
+  if(exist){
+    exist.title = name;
+    exist.dir = SAVE_CHART_PATH;
+    exist.kind = pending.type || exist.kind || "";
+    exist.thumb = pending.thumb || exist.thumb || "";
+    exist.snapshot = pending.snapshot || exist.snapshot || null;
+    exist.builderState = builderState || exist.builderState || null;
+    exist.mine = true;
+    exist.inMine = true;
+    id = exist.id;
+  } else {
+    id = "C" + String(10000 + hashStr(name + Date.now()) % 90000);
+    CHARTS.unshift({
+      id: id,
+      title: name,
+      dir: SAVE_CHART_PATH,
+      kind: pending.type || "",
+      mine: true,
+      date: todayStr(),
+      inMine: true,
+      seed: hashStr(name + id),
+      thumb: pending.thumb || "",
+      snapshot: pending.snapshot || null,
+      builderState: builderState
+    });
+  }
+  PENDING_SAVE = null;
+  EDITING_CHART_ID = "";
+  RESTORE_CHART = null;
+  gridDir = SAVE_CHART_PATH;
+  gridItemId = id;
+  DIR_EXP[SAVE_CHART_PATH] = true;
+  var el = document.getElementById("saveChartMask");
+  if(el) el.classList.remove("show");
+  closeScPathPanel();
+  closeBuilderDrawer();
+  refresh({ resetPage: true });
+  persistGallery();
+  toast("图表「" + name + "」已保存到「" + scPathLabel(SAVE_CHART_PATH) + "」");
+}
+function openDirAddModal(parentPath){
+  DIR_ADD_PARENT = parentPath || "";
+  document.getElementById("daParent").textContent = DIR_ADD_PARENT || "根目录（一级目录）";
+  document.getElementById("daName").value = "";
+  openMask("dirAddMask");
+  setTimeout(function(){ document.getElementById("daName").focus(); }, 40);
+}
+function openDirEditModal(path){
+  if(!path) return;
+  var parts = path.split("/");
+  var isChild = parts.length > 1;
+  DIR_EDIT_CTX = { path: path, level: isChild ? "child" : "top" };
+  if(isChild){
+    DIR_EDIT_CTX.loc = dirLocate(path);
+    document.getElementById("deName").value = parts[parts.length - 1];
+    var sel = document.getElementById("deParent");
+    var parentPath = parts.slice(0, -1).join("/");
+    sel.innerHTML = '<option value="' + parentPath + '" selected>' + parentPath + "</option>";
+    sel.disabled = true;
+  }else{
+    var ti = DIR_TREE.findIndex(function(d){ return d.name === path; });
+    DIR_EDIT_CTX.topIdx = ti;
+    document.getElementById("deName").value = path;
+    var sel2 = document.getElementById("deParent");
+    sel2.innerHTML = '<option value="">根目录（一级目录）</option>';
+    sel2.value = "";
+    sel2.disabled = true;
+  }
+  openMask("dirEditMask");
+  setTimeout(function(){ document.getElementById("deName").focus(); }, 40);
+}
+function openDirDelModal(path){
+  if(!path) return;
+  DIR_DEL_PATH = path;
+  var label = path.split("/").pop();
+  var cnt = dirCntOf(path);
+  document.getElementById("dirDelMsg").textContent = cnt > 0
+    ? "目录「" + label + "」下仍有 " + cnt + " 张图表，删除后其子目录结构将一并移除。确认删除该目录？"
+    : "确认删除目录「" + label + "」？删除后不可恢复。";
+  openMask("dirDelMask");
+}
+
+document.getElementById("dirTree").addEventListener("click", function(e){
+  var op = e.target.closest(".di-add, .di-edit, .di-del, .di-move");
+  if(op){
+    e.stopPropagation();
+    if(op.classList.contains("di-move")){
+      toast("按住拖拽即可移动");
+      return;
+    }
+    var p = op.dataset.path;
+    if(op.classList.contains("di-add")) openDirAddModal(p);
+    else if(op.classList.contains("di-edit")) openDirEditModal(p);
+    else if(op.classList.contains("di-del")) openDirDelModal(p);
+    return;
+  }
+  var leaf = e.target.closest(".dir-item.dt-leaf");
+  if(leaf){
+    var id = leaf.dataset.id || "";
+    var hit = CHARTS.filter(function(c){ return c.id === id; })[0];
+    gridItemId = id;
+    gridDir = hit ? chartDirPath(hit) : "";
+    if(gridDir) DIR_EXP[gridDir] = true;
+    refresh({ resetPage: true });
+    return;
+  }
+  var item = e.target.closest(".dir-item[data-path]");
+  if(!item) return;
+  var path = item.dataset.path || "";
+  if(e.target.closest(".di-arrow")){
+    DIR_EXP[path] = !dirIsOpen(path, dirHasKids(path));
+    renderDir();
+    return;
+  }
+  gridItemId = "";
+  DIR_EXP[path] = true;
+  if(path && gridDir === path) gridDir = "";
+  else gridDir = path;
+  refresh({ resetPage: true });
+});
+
+var CHART_DRAG = { id: "", did: false, dropEl: null };
+function clearChartDropHighlight(){
+  if(CHART_DRAG.dropEl){
+    CHART_DRAG.dropEl.classList.remove("drop-on");
+    CHART_DRAG.dropEl = null;
+  }
+}
+function endChartDrag(){
+  clearChartDropHighlight();
+  document.body.classList.remove("is-chart-dragging");
+  document.querySelectorAll(".chart-card.dragging").forEach(function(el){ el.classList.remove("dragging"); });
+  CHART_DRAG.id = "";
+}
+document.getElementById("dirTree").addEventListener("dragstart", function(e){
+  var leaf = e.target.closest(".dir-item.dt-leaf");
+  if(!leaf){ e.preventDefault(); return; }
+  CHART_DRAG.id = leaf.dataset.id || "";
+  CHART_DRAG.did = true;
+  e.dataTransfer.effectAllowed = "move";
+  try{ e.dataTransfer.setData("text/plain", CHART_DRAG.id); }catch(err){}
+  document.body.classList.add("is-chart-dragging");
+});
+document.getElementById("dirTree").addEventListener("dragend", function(){
+  endChartDrag();
+  setTimeout(function(){ CHART_DRAG.did = false; }, 0);
+});
+document.getElementById("dirTree").addEventListener("dragover", function(e){
+  if(!CHART_DRAG.id) return;
+  e.preventDefault();
+  e.dataTransfer.dropEffect = "move";
+  var it = e.target.closest(".dir-item[data-path]");
+  if(CHART_DRAG.dropEl === it) return;
+  clearChartDropHighlight();
+  if(it){
+    CHART_DRAG.dropEl = it;
+    it.classList.add("drop-on");
+  }
+});
+document.getElementById("dirTree").addEventListener("dragleave", function(e){
+  if(!this.contains(e.relatedTarget)) clearChartDropHighlight();
+});
+document.getElementById("dirTree").addEventListener("drop", function(e){
+  e.preventDefault();
+  var it = e.target.closest(".dir-item[data-path]");
+  var path = it ? (it.dataset.path || "") : "";
+  var id = CHART_DRAG.id;
+  endChartDrag();
+  if(!id) return;
+  if(!path){ toast("请拖到具体目录"); return; }
+  if(!dirLocate(path)){ toast("目录不存在"); return; }
+  var hit = CHARTS.filter(function(c){ return c.id === id; })[0];
+  if(!hit) return;
+  if(chartDirPath(hit) === path){ toast("「" + hit.title + "」已在该目录"); return; }
+  moveChartsToDir([id], path);
+  persistGallery();
+  gridDir = path;
+  gridItemId = id;
+  DIR_EXP[path] = true;
+  refresh({ resetPage: true });
+  toast("已移动「" + hit.title + "」到「" + scPathLabel(path) + "」");
+});
+
+document.getElementById("btnAddDir").addEventListener("click", function(){
+  openDirAddModal(selectedDirParent());
+});
+document.getElementById("daOk").addEventListener("click", function(){
+  var name = document.getElementById("daName").value.trim();
+  if(!name){ toast("请填写目录名称"); return; }
+  if(/[\/\\]/.test(name)){ toast("目录名称不能包含斜杠"); return; }
+  var result = dirAddUnder(DIR_ADD_PARENT || "", name);
+  if(!result.ok){ toast(result.msg); return; }
+  gridDir = result.path;
+  closeMask("dirAddMask");
+  refresh({ resetPage: true });
+  persistGallery();
+  toast("已添加目录：" + name);
+});
+document.getElementById("deOk").addEventListener("click", function(){
+  if(!DIR_EDIT_CTX) return;
+  var name = document.getElementById("deName").value.trim();
+  if(!name){ toast("请填写目录名称"); return; }
+  if(/[\/\\]/.test(name)){ toast("目录名称不能包含斜杠"); return; }
+  var oldPath = DIR_EDIT_CTX.path;
+  if(DIR_EDIT_CTX.level === "top"){
+    var node = DIR_TREE[DIR_EDIT_CTX.topIdx];
+    if(!node){ toast("目录不存在"); return; }
+    if(name !== node.name && DIR_TREE.some(function(d){ return d.name === name; })){
+      toast("已存在同名一级目录"); return;
+    }
+    node.name = name;
+    CHARTS.forEach(function(c){
+      if(c.dir === oldPath) c.dir = name;
+      else if(c.dir.indexOf(oldPath + "/") === 0) c.dir = name + c.dir.slice(oldPath.length);
+    });
+    if(gridDir === oldPath) gridDir = name;
+    else if(gridDir.indexOf(oldPath + "/") === 0) gridDir = name + gridDir.slice(oldPath.length);
+  }else{
+    var loc = DIR_EDIT_CTX.loc || dirLocate(oldPath);
+    if(!loc){ toast("目录不存在"); return; }
+    var conflict = loc.container.some(function(c, i){
+      return i !== loc.index && dirChildName(c) === name;
+    });
+    if(conflict){ toast("同级已存在同名目录"); return; }
+    var cur = loc.container[loc.index];
+    if(typeof cur === "string") loc.container[loc.index] = name;
+    else cur.name = name;
+    var newPath = oldPath.split("/").slice(0, -1).concat([name]).join("/");
+    CHARTS.forEach(function(c){
+      if(c.dir === oldPath) c.dir = newPath;
+      else if(c.dir.indexOf(oldPath + "/") === 0) c.dir = newPath + c.dir.slice(oldPath.length);
+    });
+    if(gridDir === oldPath) gridDir = newPath;
+    else if(gridDir.indexOf(oldPath + "/") === 0) gridDir = newPath + gridDir.slice(oldPath.length);
+  }
+  closeMask("dirEditMask");
+  DIR_EDIT_CTX = null;
+  refresh();
+  persistGallery();
+  toast("目录已保存");
+});
+document.getElementById("dirDelOk").addEventListener("click", function(){
+  var path = DIR_DEL_PATH;
+  if(!path) return;
+  var label = path.split("/").pop();
+  var loc = dirLocate(path);
+  if(!loc){
+    closeMask("dirDelMask");
+    DIR_DEL_PATH = "";
+    toast("目录不存在");
+    return;
+  }
+  loc.container.splice(loc.index, 1);
+  if(gridDir === path || gridDir.indexOf(path + "/") === 0) gridDir = "";
+  closeMask("dirDelMask");
+  DIR_DEL_PATH = "";
+  refresh();
+  persistGallery();
+  toast("已删除目录：" + label);
+});
+
+document.getElementById("chartSearch").addEventListener("input", function(e){
+  state.kw = e.target.value.trim();
+  renderGallery({ resetPage: true });
+});
+document.getElementById("chartExact").addEventListener("change", function(e){
+  state.exact = !!e.target.checked;
+  renderGallery({ resetPage: true });
+  toast(state.exact ? "已开启精准匹配：仅完全匹配名称/ID" : "已关闭精准匹配：支持模糊搜索");
+});
+document.getElementById("onlyMine").addEventListener("change", function(e){
+  state.onlyMine = !!e.target.checked;
+  renderGallery({ resetPage: true });
+});
+document.getElementById("dirToggle").addEventListener("click", function(){
+  document.getElementById("dirPanel").classList.toggle("collapsed");
+});
+function showBuilderBoot(){
+  var root = document.getElementById("builderDrawer");
+  if(root) root.classList.remove("is-ready");
+}
+function markBuilderReady(){
+  var root = document.getElementById("builderDrawer");
+  if(!root) return;
+  clearTimeout(markBuilderReady._t);
+  if(root.classList.contains("is-ready")) return;
+  requestAnimationFrame(function(){ root.classList.add("is-ready"); });
+}
+function ensureBuilderFrame(){
+  var frame = document.getElementById("builderFrame");
+  if(!frame || frame.dataset.loaded === "1") return;
+  frame.src = "chart-builder.html?drawer=1";
+  frame.dataset.loaded = "1";
+}
+function pushRestoreToBuilder(){
+  var frame = document.getElementById("builderFrame");
+  if(!frame || !frame.contentWindow || !RESTORE_CHART || !RESTORE_CHART.builderState) return;
+  frame.contentWindow.postMessage({
+    type: "chart-builder-restore",
+    id: RESTORE_CHART.id,
+    title: RESTORE_CHART.title,
+    dir: RESTORE_CHART.dir,
+    state: RESTORE_CHART.builderState
+  }, "*");
+}
+function pushResetToBuilder(){
+  var frame = document.getElementById("builderFrame");
+  if(!frame || !frame.contentWindow) return;
+  frame.contentWindow.postMessage({ type: "chart-builder-reset" }, "*");
+}
+function applyBuilderSession(){
+  if(!BUILDER_FRAME_READY) return;
+  if(RESTORE_CHART) pushRestoreToBuilder();
+  else pushResetToBuilder();
+}
+function openBuilderDrawer(chart){
+  var root = document.getElementById("builderDrawer");
+  if(!root) return;
+  RESTORE_CHART = (chart && chart.builderState) ? chart : null;
+  EDITING_CHART_ID = RESTORE_CHART ? chart.id : "";
+  showBuilderBoot();
+  root.classList.add("open", "fullscreen");
+  root.setAttribute("aria-hidden", "false");
+  document.body.style.overflow = "hidden";
+  clearTimeout(markBuilderReady._t);
+  markBuilderReady._t = setTimeout(markBuilderReady, 2800);
+  ensureBuilderFrame();
+  if(BUILDER_FRAME_READY) applyBuilderSession();
+}
+function closeBuilderDrawer(){
+  var root = document.getElementById("builderDrawer");
+  if(!root) return;
+  root.classList.remove("open");
+  root.classList.remove("fullscreen");
+  root.classList.remove("is-ready");
+  root.setAttribute("aria-hidden", "true");
+  document.body.style.overflow = "";
+  RESTORE_CHART = null;
+  clearTimeout(markBuilderReady._t);
+}
+document.getElementById("btnAddChart").addEventListener("click", openBuilderDrawer);
+document.getElementById("scPathBtn").addEventListener("click", function(e){
+  e.stopPropagation();
+  var wrap = document.getElementById("scPath");
+  if(!wrap) return;
+  var open = wrap.classList.toggle("open");
+  if(open) renderScPathPanel();
+});
+document.getElementById("scPathPanel").addEventListener("click", function(e){
+  var item = e.target.closest(".sc-path-item");
+  if(!item || !item.dataset.path) return;
+  SAVE_CHART_PATH = item.dataset.path;
+  syncScPathBtn();
+  closeScPathPanel();
+});
+document.getElementById("scOk").addEventListener("click", confirmSaveChart);
+document.getElementById("scName").addEventListener("keydown", function(e){
+  if(e.key === "Enter"){ e.preventDefault(); confirmSaveChart(); }
+});
+document.getElementById("btnBatchMove").addEventListener("click", function(){ openBatchMove(); });
+document.getElementById("bmList").addEventListener("change", syncBmCount);
+document.getElementById("bmAll").addEventListener("click", function(){
+  var boxes = document.querySelectorAll("#bmList input[type=checkbox]");
+  var allChecked = boxes.length && [].every.call(boxes, function(b){ return b.checked; });
+  boxes.forEach(function(b){ b.checked = !allChecked; });
+  syncBmCount();
+});
+document.getElementById("bmPathBtn").addEventListener("click", function(e){
+  e.stopPropagation();
+  var wrap = document.getElementById("bmPath");
+  if(!wrap) return;
+  var open = wrap.classList.toggle("open");
+  if(open) renderBmPathPanel();
+});
+document.getElementById("bmPathPanel").addEventListener("click", function(e){
+  var item = e.target.closest(".sc-path-item");
+  if(!item || !item.dataset.path) return;
+  MOVE_CHART_PATH = item.dataset.path;
+  syncBmPathBtn();
+  closeBmPathPanel();
+});
+document.getElementById("bmOk").addEventListener("click", confirmMoveCharts);
+document.addEventListener("click", function(e){
+  if(!e.target.closest("#scPath")) closeScPathPanel();
+  if(!e.target.closest("#bmPath")) closeBmPathPanel();
+});
+document.getElementById("builderDrawerMask").addEventListener("click", closeBuilderDrawer);
+window.addEventListener("message", function(e){
+  var data = e.data || {};
+  if(data.type === "chart-builder-close") closeBuilderDrawer();
+  if(data.type === "chart-builder-fullscreen"){
+    var root = document.getElementById("builderDrawer");
+    if(root) root.classList.toggle("fullscreen", !!data.on);
+  }
+  if(data.type === "chart-builder-save-request"){
+    PENDING_SAVE = {
+      title: data.title || "未命名图表",
+      thumb: data.thumb || "",
+      type: data.chartType || "",
+      snapshot: data.snapshot || null,
+      builderState: data.builderState || null,
+      editId: data.editId || EDITING_CHART_ID || ""
+    };
+    openSaveChartModal(PENDING_SAVE.title);
+  }
+  if(data.type === "chart-builder-ready"){
+    BUILDER_FRAME_READY = true;
+    var root = document.getElementById("builderDrawer");
+    if(root && root.classList.contains("open")) applyBuilderSession();
+  }
+  if(data.type === "chart-builder-restored"){
+    markBuilderReady();
+  }
+  if(data.type === "chart-builder-reset-done"){
+    markBuilderReady();
+  }
+  if(data.type === "chart-builder-saved"){
+    toast("图表「" + (data.title || "") + "」已保存到图库");
+  }
+});
+document.getElementById("galPager").addEventListener("click", function(e){
+  var b = e.target.closest("button[data-pg]");
+  if(!b || b.disabled) return;
+  var total = filteredCharts().length;
+  var pages = Math.max(1, Math.ceil(total / PAGE_SIZE));
+  var pg = b.dataset.pg;
+  if(pg === "prev") gridPage = Math.max(1, gridPage - 1);
+  else if(pg === "next") gridPage = Math.min(pages, gridPage + 1);
+  else gridPage = +pg;
+  renderGallery();
+  var scroll = document.querySelector(".gal-scroll");
+  if(scroll) scroll.scrollTop = 0;
+});
+
+/* ---------- 创建时间筛选 ---------- */
+var giDatePop = document.getElementById("giDatePop");
+var giDateBtn = document.getElementById("giDateBtn");
+function setGiDatePopOpen(open){
+  var wrap = document.getElementById("giDate");
+  if(open){
+    giDatePop.classList.add("show");
+    if(wrap) wrap.classList.add("open");
+  } else {
+    giDatePop.classList.remove("show");
+    if(wrap) wrap.classList.remove("open");
+  }
+}
+giDateBtn.addEventListener("click", function(e){
+  e.stopPropagation();
+  document.getElementById("gdpFrom").value = state.dateFrom;
+  document.getElementById("gdpTo").value = state.dateTo;
+  setGiDatePopOpen(!giDatePop.classList.contains("show"));
+});
+document.addEventListener("mousedown", function(e){
+  if(!giDatePop.classList.contains("show")) return;
+  if(e.target.closest("#giDate")) return;
+  setTimeout(function(){
+    var ae = document.activeElement;
+    if(ae && ae.closest && ae.closest("#giDate")) return;
+    setGiDatePopOpen(false);
+  }, 0);
+});
+giDatePop.addEventListener("click", function(e){
+  var q = e.target.closest(".gdp-quick button");
+  if(!q) return;
+  var to = new Date();
+  var from = new Date();
+  from.setDate(from.getDate() - (+q.dataset.days - 1));
+  function p(n){ return n < 10 ? "0" + n : "" + n; }
+  function fmt(d){ return d.getFullYear() + "-" + p(d.getMonth() + 1) + "-" + p(d.getDate()); }
+  document.getElementById("gdpFrom").value = fmt(from);
+  document.getElementById("gdpTo").value = fmt(to);
+});
+document.getElementById("gdpOk").addEventListener("click", function(){
+  state.dateFrom = document.getElementById("gdpFrom").value || "";
+  state.dateTo = document.getElementById("gdpTo").value || "";
+  if(state.dateFrom && state.dateTo && state.dateFrom > state.dateTo){
+    var tmp = state.dateFrom; state.dateFrom = state.dateTo; state.dateTo = tmp;
+  }
+  setGiDatePopOpen(false);
+  giDateLabel();
+  renderGallery({ resetPage: true });
+});
+document.getElementById("gdpReset").addEventListener("click", function(){
+  document.getElementById("gdpFrom").value = "";
+  document.getElementById("gdpTo").value = "";
+  state.dateFrom = "";
+  state.dateTo = "";
+  giDateLabel();
+  setGiDatePopOpen(false);
+  renderGallery({ resetPage: true });
+});
+
+document.getElementById("galGrid").addEventListener("click", function(e){
+  var fav = e.target.closest("[data-fav]");
+  if(fav){
+    e.stopPropagation();
+    var id = fav.dataset.fav;
+    var hit = CHARTS.filter(function(c){ return c.id === id; })[0];
+    if(!hit) return;
+    if(hit.inMine){
+      hit.inMine = false;
+      hit.mine = false;
+      renderGallery();
+      toast("已取消收藏「" + hit.title + "」");
+    } else {
+      hit.inMine = true;
+      hit.mine = true;
+      renderGallery();
+      toast("已添加收藏「" + hit.title + "」");
+    }
+    return;
+  }
+  var card = e.target.closest(".chart-card");
+  if(card){
+    var hit = CHARTS.filter(function(c){ return c.id === card.dataset.id; })[0];
+    openBuilderDrawer(hit);
+  }
+});
+document.addEventListener("keydown", function(e){
+  if(e.key === "Escape"){
+    var saveOpen = document.getElementById("saveChartMask") && document.getElementById("saveChartMask").classList.contains("show");
+    if(saveOpen){
+      if(document.getElementById("scPath") && document.getElementById("scPath").classList.contains("open")){
+        closeScPathPanel();
+        return;
+      }
+      closeMask("saveChartMask");
+      return;
+    }
+    var batchOpen = document.getElementById("batchMask") && document.getElementById("batchMask").classList.contains("show");
+    if(batchOpen){
+      if(document.getElementById("bmPath") && document.getElementById("bmPath").classList.contains("open")){
+        closeBmPathPanel();
+        return;
+      }
+      closeMask("batchMask");
+      return;
+    }
+    if(document.getElementById("builderDrawer")?.classList.contains("open")){
+      closeBuilderDrawer();
+      return;
+    }
+    closeMask("dirAddMask"); closeMask("dirEditMask"); closeMask("dirDelMask");
+    setGiDatePopOpen(false);
+  }
+});
+
+giDateLabel();
+refresh();
+ensureBuilderFrame();
+document.getElementById("draftMenuArrow").addEventListener("click", function(e){
+  e.stopPropagation();
+  document.getElementById("menuDraftsNav").classList.toggle("expanded");
+  document.getElementById("draftSubMenu").classList.toggle("open");
+});
+</script>
+
+<script>
+(function(){
+  var menu = document.querySelector(".sidebar .menu");
+  if(!menu || menu.dataset.volcBound === "1") return;
+  menu.dataset.volcBound = "1";
+  menu.addEventListener("click", function(e){
+    if(e.target.closest(".mi-arrow")) return;
+    var sub = e.target.closest(".sub-item");
+    if(sub && menu.contains(sub)){
+      var wrap = sub.parentElement;
+      if(wrap) wrap.querySelectorAll(".sub-item").forEach(function(b){ b.classList.remove("active","on"); });
+      sub.classList.add("active");
+      menu.querySelectorAll(":scope > .menu-item").forEach(function(b){ b.classList.remove("active"); });
+      var prev = wrap && wrap.previousElementSibling;
+      if(prev && prev.classList.contains("menu-item")) prev.classList.add("active");
+      return;
+    }
+    var item = e.target.closest(".menu-item");
+    if(!item || !menu.contains(item) || item.closest(".sub-menu")) return;
+    menu.querySelectorAll(":scope > .menu-item").forEach(function(b){ b.classList.remove("active"); });
+    item.classList.add("active");
+  });
+})();
+</script>
+
+<script>
+(function(){
+  var app = document.querySelector(".app");
+  if(!app) return;
+  document.querySelectorAll(".sidebar .menu-item").forEach(function(b){
+    if(b.getAttribute("data-tip")) return;
+    var t = "";
+    b.childNodes.forEach(function(n){ if(n.nodeType === 3) t += n.textContent; });
+    t = t.replace(/\s+/g, " ").trim();
+    if(t) b.setAttribute("data-tip", t);
+  });
+  document.querySelectorAll(".sb-collapse").forEach(function(b){
+    if(!b || b.dataset.navBound === "1") return;
+    b.dataset.navBound = "1";
+    if(!b.getAttribute("data-tip")) b.setAttribute("data-tip", "展开菜单");
+    b.addEventListener("click", function(){
+      app.classList.toggle("nav-collapsed");
+      b.setAttribute("data-tip", app.classList.contains("nav-collapsed") ? "展开菜单" : "收起菜单");
+    });
+  });
+})();
+</script>
+</body>
+</html>
